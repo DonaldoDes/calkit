@@ -1,6 +1,17 @@
 import EventKit
 import Foundation
 
+/// Errors specific to event creation.
+enum CreateEventError: Error {
+    case calendarNotFound(String)
+    case ambiguousCalendar(String)
+}
+
+/// Errors specific to event update.
+enum UpdateEventError: Error {
+    case notFound(String)
+}
+
 class EventKitService {
     static let shared = EventKitService()
 
@@ -141,6 +152,107 @@ class EventKitService {
         }
 
         return results
+    }
+
+    /// Create a new event in EventKit. Returns the created CKEvent.
+    /// Throws if the save fails or if the specified calendar is not found/ambiguous.
+    func createEvent(title: String, start: Date, end: Date, calendarName: String?,
+                     location: String?, notes: String?, recurrenceRule: String?) throws -> CKEvent {
+        let event = EKEvent(eventStore: store)
+        event.title = title
+        event.startDate = start
+        event.endDate = end
+
+        // Calendar resolution
+        if let name = calendarName {
+            let allCalendars = store.calendars(for: .event)
+            // Try exact match first
+            let exactMatches = allCalendars.filter { $0.title == name }
+            if exactMatches.count == 1 {
+                event.calendar = exactMatches[0]
+            } else if exactMatches.count > 1 {
+                throw CreateEventError.ambiguousCalendar(name)
+            } else {
+                // Try substring match
+                let substringMatches = allCalendars.filter {
+                    $0.title.localizedCaseInsensitiveContains(name)
+                }
+                if substringMatches.count == 1 {
+                    event.calendar = substringMatches[0]
+                } else if substringMatches.count > 1 {
+                    throw CreateEventError.ambiguousCalendar(name)
+                } else {
+                    throw CreateEventError.calendarNotFound(name)
+                }
+            }
+        } else {
+            event.calendar = store.defaultCalendarForNewEvents
+        }
+
+        if let loc = location {
+            event.location = loc
+        }
+        if let n = notes {
+            event.notes = n
+        }
+        if let rruleStr = recurrenceRule, let rule = RecurrenceParser.parse(rruleStr) {
+            event.addRecurrenceRule(rule)
+        }
+
+        try store.save(event, span: .thisEvent, commit: true)
+
+        return CKEvent(
+            id: event.calendarItemIdentifier,
+            title: event.title ?? "",
+            start: EventDateParser.formatISO8601(event.startDate),
+            end: EventDateParser.formatISO8601(event.endDate),
+            calendar: event.calendar?.title ?? "",
+            calendarId: event.calendar?.calendarIdentifier ?? "",
+            location: event.location ?? "",
+            notes: event.notes ?? "",
+            isAllDay: event.isAllDay,
+            url: event.url?.absoluteString ?? ""
+        )
+    }
+
+    /// Update an existing event. Only non-nil fields are modified.
+    /// Throws UpdateEventError.notFound if the event ID is unknown.
+    func updateEvent(id: String, title: String?, start: Date?, end: Date?,
+                     location: String?, notes: String?) throws -> CKEvent {
+        guard let ekEvent = store.event(withIdentifier: id) else {
+            throw UpdateEventError.notFound(id)
+        }
+
+        if let title = title {
+            ekEvent.title = title
+        }
+        if let start = start {
+            ekEvent.startDate = start
+        }
+        if let end = end {
+            ekEvent.endDate = end
+        }
+        if let location = location {
+            ekEvent.location = location
+        }
+        if let notes = notes {
+            ekEvent.notes = notes
+        }
+
+        try store.save(ekEvent, span: .thisEvent, commit: true)
+
+        return CKEvent(
+            id: ekEvent.calendarItemIdentifier,
+            title: ekEvent.title ?? "",
+            start: EventDateParser.formatISO8601(ekEvent.startDate),
+            end: EventDateParser.formatISO8601(ekEvent.endDate),
+            calendar: ekEvent.calendar?.title ?? "",
+            calendarId: ekEvent.calendar?.calendarIdentifier ?? "",
+            location: ekEvent.location ?? "",
+            notes: ekEvent.notes ?? "",
+            isAllDay: ekEvent.isAllDay,
+            url: ekEvent.url?.absoluteString ?? ""
+        )
     }
 
     /// Public helper for hex conversion from RGB floats (0.0-1.0).

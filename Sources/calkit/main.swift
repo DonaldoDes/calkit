@@ -46,6 +46,10 @@ if Help.validDomains.contains(first) {
         EventsCommand.runRange(args: actionArgs)
     case ("events", "search"):
         EventsCommand.runSearch(args: actionArgs)
+    case ("events", "create"):
+        EventsCommand.runCreate(args: actionArgs)
+    case ("events", "update"):
+        EventsCommand.runUpdate(args: actionArgs)
     default:
         printError("'\(domain) \(action)' n'est pas encore implémenté.")
         exit(1)

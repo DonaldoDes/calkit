@@ -103,6 +103,30 @@ enum TextFormatter {
         }.joined(separator: "\n\n")
     }
 
+    /// Format the confirmation output for a newly created event.
+    static func formatCreatedEvent(_ event: CKEvent) -> String {
+        return """
+            Événement créé.
+              ID       : \(event.id)
+              Titre    : \(event.title)
+              Début    : \(event.start)
+              Fin      : \(event.end)
+              Calendrier : \(event.calendar)
+            """
+    }
+
+    /// Format the confirmation output for an updated event.
+    static func formatUpdatedEvent(_ event: CKEvent) -> String {
+        return """
+            Événement mis à jour.
+              ID       : \(event.id)
+              Titre    : \(event.title)
+              Début    : \(event.start)
+              Fin      : \(event.end)
+              Calendrier : \(event.calendar)
+            """
+    }
+
     /// Format a single event line: "HH:MM–HH:MM  Title  [Calendar]"
     /// or "(Toute la journée) Title  [Calendar]" for all-day events.
     private static func formatSingleEvent(_ event: CKEvent) -> String {
