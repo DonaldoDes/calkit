@@ -43,7 +43,7 @@ else
 fi
 
 # Test 10: commande stub retourne exit code 1 (pas encore implémentée)
-if $BINARY calendars list > /dev/null 2>&1; then
+if $BINARY events today > /dev/null 2>&1; then
   echo "✗ Stub command should exit 1"; exit 1
 else
   echo "✓ Stub command exits 1"

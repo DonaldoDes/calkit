@@ -33,10 +33,17 @@ if Help.validDomains.contains(first) {
         }
     }
 
-    // Stub: command not yet implemented
     let action = remaining[0]
-    printError("'\(domain) \(action)' n'est pas encore implémenté.")
-    exit(1)
+    let actionArgs = Array(remaining.dropFirst())
+
+    // Route to command handlers
+    switch (domain, action) {
+    case ("calendars", "list"):
+        CalendarsCommand.runList(args: actionArgs)
+    default:
+        printError("'\(domain) \(action)' n'est pas encore implémenté.")
+        exit(1)
+    }
 }
 
 // Unknown argument or domain
