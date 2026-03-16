@@ -17,7 +17,7 @@ build: $(SOURCES)
 		-O
 
 clean:
-	rm -f $(BINARY) calkit-tests calkit-search-tests calkit-create-tests calkit-update-tests
+	rm -f $(BINARY) calkit-tests calkit-search-tests calkit-create-tests calkit-update-tests calkit-delete-tests
 
 install: build
 	cp $(BINARY) $(INSTALL_PATH)
@@ -60,6 +60,14 @@ test-unit:
 		Sources/calkit/Services/*.swift \
 		Tests/unit/UpdateCommandTests.swift \
 		-o ./calkit-update-tests && ./calkit-update-tests
+	swiftc \
+		-framework EventKit \
+		-framework Foundation \
+		Sources/calkit/Models/*.swift \
+		Sources/calkit/Output/*.swift \
+		Sources/calkit/Services/*.swift \
+		Tests/unit/DeleteCommandTests.swift \
+		-o ./calkit-delete-tests && ./calkit-delete-tests
 
 test-smoke: build
 	bash Tests/smoke.sh
@@ -70,5 +78,6 @@ test-integration: build
 	bash Tests/integration/events_search.sh
 	bash Tests/integration/events_create.sh
 	bash Tests/integration/events_update.sh
+	bash Tests/integration/events_delete.sh
 
 test: test-unit test-smoke test-integration

@@ -1,3 +1,4 @@
+import EventKit
 import Foundation
 
 enum EventsCommand {
@@ -312,6 +313,72 @@ enum EventsCommand {
             }
         } catch {
             printError("échec de la mise à jour : \(error.localizedDescription)")
+            exit(4)
+        }
+    }
+
+    // MARK: - Delete
+
+    /// Handle `calkit events delete <id> [--span thisEvent|futureEvents]`
+    static func runDelete(args: [String]) {
+        // Help flag
+        if args.isEmpty || args.contains("--help") || args.contains("-h") {
+            print("""
+                calkit events delete — Supprimer un événement
+
+                Usage: calkit events delete <id> [--span thisEvent|futureEvents]
+
+                Arguments:
+                  <id>          Identifiant de l'événement (obligatoire)
+
+                Options:
+                  --span        Portée de la suppression : thisEvent (défaut) ou futureEvents
+                  --help, -h    Afficher cette aide
+
+                Exemples:
+                  calkit events delete abc123
+                  calkit events delete abc123 --span futureEvents
+                """)
+            if args.isEmpty {
+                exit(1)
+            }
+            exit(0)
+        }
+
+        // Parse arguments
+        let parseResult = DeleteEventArgs.parse(args)
+        let parsed: DeleteEventArgs
+        switch parseResult {
+        case .success(let p):
+            parsed = p
+        case .failure(let err):
+            printError(err.message)
+            exit(1)
+        }
+
+        // Request calendar access
+        let granted = EventKitService.shared.requestAccessSync()
+        guard granted else {
+            printError("accès au calendrier refusé. Autorisez calkit dans Réglages Système > Confidentialité > Calendriers.")
+            exit(2)
+        }
+
+        // Map span string to EKSpan
+        let ekSpan: EKSpan = parsed.span == "futureEvents" ? .futureEvents : .thisEvent
+
+        // Delete event
+        do {
+            let result = try EventKitService.shared.deleteEvent(id: parsed.id, span: ekSpan)
+            print(TextFormatter.formatDeletedEvent(id: parsed.id, title: result.title, span: result.span))
+            exit(0)
+        } catch let error as DeleteEventError {
+            switch error {
+            case .notFound(let id):
+                printError("événement '\(id)' introuvable.")
+                exit(3)
+            }
+        } catch {
+            printError("échec de la suppression : \(error.localizedDescription)")
             exit(4)
         }
     }

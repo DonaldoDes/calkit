@@ -12,6 +12,11 @@ enum UpdateEventError: Error {
     case notFound(String)
 }
 
+/// Errors specific to event deletion.
+enum DeleteEventError: Error {
+    case notFound(String)
+}
+
 class EventKitService {
     static let shared = EventKitService()
 
@@ -253,6 +258,22 @@ class EventKitService {
             isAllDay: ekEvent.isAllDay,
             url: ekEvent.url?.absoluteString ?? ""
         )
+    }
+
+    /// Delete an event by its identifier with the specified span.
+    /// Returns the title of the deleted event and the span string used.
+    /// Throws DeleteEventError.notFound if the event ID is unknown.
+    func deleteEvent(id: String, span: EKSpan) throws -> (title: String, span: String) {
+        guard let ekEvent = store.event(withIdentifier: id) else {
+            throw DeleteEventError.notFound(id)
+        }
+
+        let title = ekEvent.title ?? ""
+        let spanStr = span == .futureEvents ? "futureEvents" : "thisEvent"
+
+        try store.remove(ekEvent, span: span, commit: true)
+
+        return (title: title, span: spanStr)
     }
 
     /// Public helper for hex conversion from RGB floats (0.0-1.0).

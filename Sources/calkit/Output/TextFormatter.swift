@@ -127,6 +127,16 @@ enum TextFormatter {
             """
     }
 
+    /// Format the confirmation output for a deleted event.
+    static func formatDeletedEvent(id: String, title: String, span: String) -> String {
+        return """
+            Événement supprimé.
+              ID    : \(id)
+              Titre : \(title)
+              Span  : \(span)
+            """
+    }
+
     /// Format a single event line: "HH:MM–HH:MM  Title  [Calendar]"
     /// or "(Toute la journée) Title  [Calendar]" for all-day events.
     private static func formatSingleEvent(_ event: CKEvent) -> String {

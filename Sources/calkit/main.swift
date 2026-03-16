@@ -50,6 +50,8 @@ if Help.validDomains.contains(first) {
         EventsCommand.runCreate(args: actionArgs)
     case ("events", "update"):
         EventsCommand.runUpdate(args: actionArgs)
+    case ("events", "delete"):
+        EventsCommand.runDelete(args: actionArgs)
     default:
         printError("'\(domain) \(action)' n'est pas encore implémenté.")
         exit(1)
