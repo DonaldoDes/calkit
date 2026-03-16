@@ -11,4 +11,10 @@ enum JSONFormatter {
         }
         return json
     }
+
+    /// Format a deleted event confirmation as JSON.
+    static func formatDeletedEvent(id: String, title: String, span: String) -> String {
+        let result = CKDeleteResult(id: id, title: title, span: span, deleted: true)
+        return format(result)
+    }
 }

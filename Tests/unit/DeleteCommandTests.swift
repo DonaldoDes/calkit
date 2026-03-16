@@ -1,37 +1,6 @@
 import Foundation
 import EventKit
 
-// Minimal test framework for standalone swiftc compilation (no XCTest dependency)
-var testCount = 0
-var failCount = 0
-var currentTest = ""
-
-func runTest(_ name: String, _ body: () -> Void) {
-    currentTest = name
-    testCount += 1
-    body()
-}
-
-func assertEqual<T: Equatable>(_ a: T, _ b: T, _ msg: String = "", file: String = #file, line: Int = #line) {
-    if a != b {
-        failCount += 1
-        let extra = msg.isEmpty ? "" : " — \(msg)"
-        FileHandle.standardError.write(Data("FAIL [\(currentTest)] \(file):\(line): \(a) != \(b)\(extra)\n".utf8))
-    }
-}
-
-func assertTrue(_ condition: Bool, _ msg: String = "", file: String = #file, line: Int = #line) {
-    if !condition {
-        failCount += 1
-        let extra = msg.isEmpty ? "" : " — \(msg)"
-        FileHandle.standardError.write(Data("FAIL [\(currentTest)] \(file):\(line): assertion false\(extra)\n".utf8))
-    }
-}
-
-func assertFalse(_ condition: Bool, _ msg: String = "", file: String = #file, line: Int = #line) {
-    assertTrue(!condition, msg, file: file, line: line)
-}
-
 @main
 struct DeleteTestRunner {
     static func main() {
@@ -100,14 +69,50 @@ struct DeleteTestRunner {
             assertTrue(output.contains("thisEvent"), "Should contain span value")
         }
 
-        // Report
-        print("")
-        if failCount > 0 {
-            print("\(failCount) failure(s) out of \(testCount) tests.")
-            exit(1)
-        } else {
-            print("All \(testCount) tests passed.")
-            exit(0)
+        // --- Fix 5: --json flag tests ---
+
+        runTest("testParseDeleteArgs_jsonFlag") {
+            let args = ["abc123", "--json"]
+            let result = DeleteEventArgs.parse(args)
+            switch result {
+            case .success(let parsed):
+                assertEqual(parsed.id, "abc123")
+                assertEqual(parsed.span, "thisEvent")
+                assertTrue(parsed.useJSON, "Should detect --json flag")
+            case .failure(let err):
+                failCount += 1
+                FileHandle.standardError.write(Data("FAIL [\(currentTest)] unexpected error: \(err.message)\n".utf8))
+            }
         }
+
+        runTest("testParseDeleteArgs_jsonAndSpan") {
+            let args = ["abc123", "--span", "futureEvents", "--json"]
+            let result = DeleteEventArgs.parse(args)
+            switch result {
+            case .success(let parsed):
+                assertEqual(parsed.id, "abc123")
+                assertEqual(parsed.span, "futureEvents")
+                assertTrue(parsed.useJSON, "Should detect --json flag with --span")
+            case .failure(let err):
+                failCount += 1
+                FileHandle.standardError.write(Data("FAIL [\(currentTest)] unexpected error: \(err.message)\n".utf8))
+            }
+        }
+
+        runTest("testFormatDeletedEventJSON") {
+            let json = JSONFormatter.formatDeletedEvent(id: "abc123", title: "Reunion equipe", span: "thisEvent")
+            guard let data = json.data(using: .utf8),
+                  let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                failCount += 1
+                FileHandle.standardError.write(Data("FAIL [\(currentTest)] Output should be valid JSON object\n".utf8))
+                return
+            }
+            assertEqual(parsed["id"] as? String ?? "", "abc123")
+            assertEqual(parsed["title"] as? String ?? "", "Reunion equipe")
+            assertEqual(parsed["span"] as? String ?? "", "thisEvent")
+            assertEqual(parsed["deleted"] as? Bool ?? false, true, "Should have deleted=true")
+        }
+
+        reportResults()
     }
 }

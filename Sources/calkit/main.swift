@@ -41,17 +41,17 @@ if Help.validDomains.contains(first) {
     case ("calendars", "list"):
         CalendarsCommand.runList(args: actionArgs)
     case ("events", "today"):
-        EventsCommand.runToday(args: actionArgs)
+        EventsReadCommand.runToday(args: actionArgs)
     case ("events", "range"):
-        EventsCommand.runRange(args: actionArgs)
+        EventsReadCommand.runRange(args: actionArgs)
     case ("events", "search"):
-        EventsCommand.runSearch(args: actionArgs)
+        EventsReadCommand.runSearch(args: actionArgs)
     case ("events", "create"):
-        EventsCommand.runCreate(args: actionArgs)
+        EventsWriteCommand.runCreate(args: actionArgs)
     case ("events", "update"):
-        EventsCommand.runUpdate(args: actionArgs)
+        EventsWriteCommand.runUpdate(args: actionArgs)
     case ("events", "delete"):
-        EventsCommand.runDelete(args: actionArgs)
+        EventsWriteCommand.runDelete(args: actionArgs)
     default:
         printError("'\(domain) \(action)' n'est pas encore implémenté.")
         exit(1)

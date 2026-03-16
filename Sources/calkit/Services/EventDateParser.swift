@@ -37,7 +37,10 @@ enum EventDateParser {
         endComponents.hour = 23
         endComponents.minute = 59
         endComponents.second = 59
-        let endOfDay = cal.date(bySettingHour: 23, minute: 59, second: 59, of: startOfDay)!
+        guard let endOfDay = cal.date(bySettingHour: 23, minute: 59, second: 59, of: startOfDay) else {
+            FileHandle.standardError.write(Data("calkit: error: impossible de calculer la fin de journée.\n".utf8))
+            exit(1)
+        }
         return (startOfDay, endOfDay)
     }
 

@@ -4,6 +4,7 @@ import Foundation
 struct DeleteEventArgs {
     let id: String
     let span: String  // "thisEvent" or "futureEvents"
+    let useJSON: Bool
 
     /// Valid span values.
     private static let validSpans: Set<String> = ["thisEvent", "futureEvents"]
@@ -13,6 +14,7 @@ struct DeleteEventArgs {
     static func parse(_ args: [String]) -> Result<DeleteEventArgs, ParseError> {
         var positional: [String] = []
         var options: [String: String] = [:]
+        var flags: Set<String> = []
         let valuedOptions: Set<String> = ["--span"]
 
         var i = 0
@@ -25,7 +27,7 @@ struct DeleteEventArgs {
                 options[arg] = args[i + 1]
                 i += 2
             } else if arg.hasPrefix("--") {
-                // Boolean flags (none expected for delete, but skip gracefully)
+                flags.insert(arg)
                 i += 1
             } else {
                 positional.append(arg)
@@ -35,7 +37,7 @@ struct DeleteEventArgs {
 
         // ID is the first positional argument
         guard let id = positional.first, !id.isEmpty else {
-            return .failure(ParseError(message: "identifiant manquant. Usage : calkit events delete <id> [--span thisEvent|futureEvents]"))
+            return .failure(ParseError(message: "identifiant manquant. Usage : calkit events delete <id> [--span thisEvent|futureEvents] [--json]"))
         }
 
         // Span validation
@@ -44,6 +46,6 @@ struct DeleteEventArgs {
             return .failure(ParseError(message: "valeur --span invalide : '\(span)'. Valeurs autorisees : thisEvent, futureEvents"))
         }
 
-        return .success(DeleteEventArgs(id: id, span: span))
+        return .success(DeleteEventArgs(id: id, span: span, useJSON: flags.contains("--json")))
     }
 }

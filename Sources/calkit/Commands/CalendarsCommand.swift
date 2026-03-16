@@ -3,6 +3,24 @@ import Foundation
 enum CalendarsCommand {
     /// Handle `calkit calendars list [--json]`
     static func runList(args: [String]) {
+        // Help flag
+        if args.contains("--help") || args.contains("-h") {
+            print("""
+                calkit calendars list — Lister tous les calendriers disponibles
+
+                Usage: calkit calendars list [--json]
+
+                Options:
+                  --json        Sortie au format JSON
+                  --help, -h    Afficher cette aide
+
+                Exemples:
+                  calkit calendars list
+                  calkit calendars list --json
+                """)
+            exit(0)
+        }
+
         let useJSON = args.contains("--json")
 
         // Request access synchronously

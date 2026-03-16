@@ -1,6 +1,7 @@
 BINARY = calkit
 SOURCES = $(shell find Sources -name '*.swift')
 INSTALL_PATH = /usr/local/bin/$(BINARY)
+TEST_FW = Tests/unit/TestFramework.swift
 
 .PHONY: build clean install test test-unit test-smoke test-integration
 
@@ -34,6 +35,7 @@ test-unit:
 		Sources/calkit/Models/*.swift \
 		Sources/calkit/Output/*.swift \
 		Sources/calkit/Services/*.swift \
+		$(TEST_FW) \
 		Tests/unit/FormatterTests.swift \
 		-o ./calkit-tests && ./calkit-tests
 	swiftc \
@@ -42,6 +44,7 @@ test-unit:
 		Sources/calkit/Models/*.swift \
 		Sources/calkit/Output/*.swift \
 		Sources/calkit/Services/*.swift \
+		$(TEST_FW) \
 		Tests/unit/SearchFormatterTests.swift \
 		-o ./calkit-search-tests && ./calkit-search-tests
 	swiftc \
@@ -50,6 +53,7 @@ test-unit:
 		Sources/calkit/Models/*.swift \
 		Sources/calkit/Output/*.swift \
 		Sources/calkit/Services/*.swift \
+		$(TEST_FW) \
 		Tests/unit/CreateCommandTests.swift \
 		-o ./calkit-create-tests && ./calkit-create-tests
 	swiftc \
@@ -58,6 +62,7 @@ test-unit:
 		Sources/calkit/Models/*.swift \
 		Sources/calkit/Output/*.swift \
 		Sources/calkit/Services/*.swift \
+		$(TEST_FW) \
 		Tests/unit/UpdateCommandTests.swift \
 		-o ./calkit-update-tests && ./calkit-update-tests
 	swiftc \
@@ -66,6 +71,7 @@ test-unit:
 		Sources/calkit/Models/*.swift \
 		Sources/calkit/Output/*.swift \
 		Sources/calkit/Services/*.swift \
+		$(TEST_FW) \
 		Tests/unit/DeleteCommandTests.swift \
 		-o ./calkit-delete-tests && ./calkit-delete-tests
 

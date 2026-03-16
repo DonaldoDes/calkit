@@ -26,3 +26,10 @@ struct CKSearchResult: Codable {
     let url: String
     let matchedOn: String
 }
+
+struct CKDeleteResult: Codable {
+    let id: String
+    let title: String
+    let span: String
+    let deleted: Bool
+}
