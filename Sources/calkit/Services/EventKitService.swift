@@ -86,6 +86,63 @@ class EventKitService {
         return EventKitService.hexFromRGB(r: r, g: g, b: b)
     }
 
+    /// Fetch events in a date range, optionally filtered by calendar name.
+    /// Maps EKEvent → CKEvent.
+    func fetchEvents(from startDate: Date, to endDate: Date, calendarName: String?) -> [CKEvent] {
+        var calendars: [EKCalendar]? = nil
+        if let name = calendarName {
+            let matching = store.calendars(for: .event).filter { $0.title == name }
+            if matching.isEmpty {
+                return []
+            }
+            calendars = matching
+        }
+
+        let predicate = store.predicateForEvents(withStart: startDate, end: endDate, calendars: calendars)
+        let ekEvents = store.events(matching: predicate)
+
+        return ekEvents.map { ev in
+            CKEvent(
+                id: ev.calendarItemIdentifier,
+                title: ev.title ?? "",
+                start: EventDateParser.formatISO8601(ev.startDate),
+                end: EventDateParser.formatISO8601(ev.endDate),
+                calendar: ev.calendar?.title ?? "",
+                calendarId: ev.calendar?.calendarIdentifier ?? "",
+                location: ev.location ?? "",
+                notes: ev.notes ?? "",
+                isAllDay: ev.isAllDay,
+                url: ev.url?.absoluteString ?? ""
+            )
+        }
+    }
+
+    /// Search events by term (case-insensitive) on title and notes within a date range.
+    /// Returns matching events with a matchedOn indicator ("title", "notes", or "title,notes").
+    func searchEvents(term: String, from startDate: Date, to endDate: Date, calendarName: String?) -> [(event: CKEvent, matchedOn: String)] {
+        let allEvents = fetchEvents(from: startDate, to: endDate, calendarName: calendarName)
+        var results: [(event: CKEvent, matchedOn: String)] = []
+
+        for event in allEvents {
+            let titleMatch = event.title.localizedCaseInsensitiveContains(term)
+            let notesMatch = event.notes.localizedCaseInsensitiveContains(term)
+
+            if titleMatch || notesMatch {
+                let matchedOn: String
+                if titleMatch && notesMatch {
+                    matchedOn = "title,notes"
+                } else if titleMatch {
+                    matchedOn = "title"
+                } else {
+                    matchedOn = "notes"
+                }
+                results.append((event: event, matchedOn: matchedOn))
+            }
+        }
+
+        return results
+    }
+
     /// Public helper for hex conversion from RGB floats (0.0-1.0).
     static func hexFromRGB(r: CGFloat, g: CGFloat, b: CGFloat) -> String {
         let ri = Int(round(r * 255.0))

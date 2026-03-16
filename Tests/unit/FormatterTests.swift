@@ -153,6 +153,96 @@ struct TestRunner {
             assertEqual(mid, "#808080", "0.5 should map to 0x80 (128)")
         }
 
+        // --- Event Text Formatter Tests ---
+
+        runTest("formatEventsText_empty") {
+            let events: [CKEvent] = []
+            let output = TextFormatter.formatEventsText(events, groupByDay: true)
+            assertEqual(output, "Aucun événement trouvé")
+        }
+
+        runTest("formatEventsText_single") {
+            let events = [
+                CKEvent(
+                    id: "abc123", title: "Réunion équipe",
+                    start: "2026-03-16T10:00:00+01:00", end: "2026-03-16T11:00:00+01:00",
+                    calendar: "Travail", calendarId: "def456",
+                    location: "", notes: "", isAllDay: false, url: ""
+                )
+            ]
+            let output = TextFormatter.formatEventsText(events, groupByDay: true)
+            assertTrue(output.contains("10:00"), "Should contain start time")
+            assertTrue(output.contains("11:00"), "Should contain end time")
+            assertTrue(output.contains("Réunion équipe"), "Should contain event title")
+            assertTrue(output.contains("[Travail]"), "Should contain calendar name in brackets")
+        }
+
+        runTest("formatEventsText_allDay") {
+            let events = [
+                CKEvent(
+                    id: "xyz789", title: "Jour férié",
+                    start: "2026-03-16T00:00:00+01:00", end: "2026-03-17T00:00:00+01:00",
+                    calendar: "Jours fériés", calendarId: "jf001",
+                    location: "", notes: "", isAllDay: true, url: ""
+                )
+            ]
+            let output = TextFormatter.formatEventsText(events, groupByDay: true)
+            assertTrue(output.contains("(Toute la journée)"), "All-day events should show '(Toute la journée)'")
+            assertTrue(output.contains("Jour férié"), "Should contain event title")
+            assertTrue(output.contains("[Jours fériés]"), "Should contain calendar name")
+        }
+
+        runTest("formatEventsJSON") {
+            let events = [
+                CKEvent(
+                    id: "abc123", title: "Réunion équipe",
+                    start: "2026-03-16T10:00:00+01:00", end: "2026-03-16T11:00:00+01:00",
+                    calendar: "Travail", calendarId: "def456",
+                    location: "Salle A", notes: "Agenda: roadmap", isAllDay: false, url: ""
+                )
+            ]
+            let json = JSONFormatter.format(events)
+            guard let data = json.data(using: .utf8),
+                  let parsed = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
+                failCount += 1
+                FileHandle.standardError.write(Data("FAIL [formatEventsJSON] Output should be valid JSON array\n".utf8))
+                return
+            }
+            assertEqual(parsed.count, 1, "Should have one event")
+            assertEqual(parsed[0]["id"] as? String ?? "", "abc123")
+            assertEqual(parsed[0]["title"] as? String ?? "", "Réunion équipe")
+            assertEqual(parsed[0]["start"] as? String ?? "", "2026-03-16T10:00:00+01:00")
+            assertEqual(parsed[0]["calendar"] as? String ?? "", "Travail")
+            assertEqual(parsed[0]["calendarId"] as? String ?? "", "def456")
+            assertEqual(parsed[0]["location"] as? String ?? "", "Salle A")
+            assertEqual(parsed[0]["isAllDay"] as? Bool ?? true, false)
+        }
+
+        runTest("parseDateToday") {
+            // Today should produce a range from 00:00:00 to 23:59:59
+            let (start, end) = EventDateParser.todayRange()
+            let cal = Calendar.current
+            assertEqual(cal.component(.hour, from: start), 0)
+            assertEqual(cal.component(.minute, from: start), 0)
+            assertEqual(cal.component(.second, from: start), 0)
+            assertEqual(cal.component(.hour, from: end), 23)
+            assertEqual(cal.component(.minute, from: end), 59)
+            assertEqual(cal.component(.second, from: end), 59)
+            // Same day
+            assertEqual(cal.component(.day, from: start), cal.component(.day, from: end))
+        }
+
+        runTest("parseDateRange") {
+            let result = EventDateParser.parseDate("2026-03-20")
+            assertTrue(result != nil, "Should parse YYYY-MM-DD format")
+            if let date = result {
+                let cal = Calendar.current
+                assertEqual(cal.component(.year, from: date), 2026)
+                assertEqual(cal.component(.month, from: date), 3)
+                assertEqual(cal.component(.day, from: date), 20)
+            }
+        }
+
         // Report
         print("")
         if failCount > 0 {

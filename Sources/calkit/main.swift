@@ -40,6 +40,12 @@ if Help.validDomains.contains(first) {
     switch (domain, action) {
     case ("calendars", "list"):
         CalendarsCommand.runList(args: actionArgs)
+    case ("events", "today"):
+        EventsCommand.runToday(args: actionArgs)
+    case ("events", "range"):
+        EventsCommand.runRange(args: actionArgs)
+    case ("events", "search"):
+        EventsCommand.runSearch(args: actionArgs)
     default:
         printError("'\(domain) \(action)' n'est pas encore implémenté.")
         exit(1)

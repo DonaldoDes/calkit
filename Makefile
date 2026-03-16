@@ -36,11 +36,21 @@ test-unit:
 		Sources/calkit/Services/*.swift \
 		Tests/unit/FormatterTests.swift \
 		-o ./calkit-tests && ./calkit-tests
+	swiftc \
+		-framework EventKit \
+		-framework Foundation \
+		Sources/calkit/Models/*.swift \
+		Sources/calkit/Output/*.swift \
+		Sources/calkit/Services/*.swift \
+		Tests/unit/SearchFormatterTests.swift \
+		-o ./calkit-search-tests && ./calkit-search-tests
 
 test-smoke: build
 	bash Tests/smoke.sh
 
 test-integration: build
 	bash Tests/integration/calendars_list.sh
+	bash Tests/integration/events_today.sh
+	bash Tests/integration/events_search.sh
 
 test: test-unit test-smoke test-integration
