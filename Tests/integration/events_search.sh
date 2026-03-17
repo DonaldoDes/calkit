@@ -24,8 +24,8 @@ else
 fi
 
 # Search with term → exit 0 or 2 (permission denied acceptable)
+EXIT=0
 OUTPUT=$($BINARY events search "xyznonexistent12345" 2>&1) || EXIT=$?
-EXIT=${EXIT:-0}
 if [ "$EXIT" -eq 0 ] || [ "$EXIT" -eq 2 ]; then
     pass "search with term exits 0 or 2 (exit $EXIT)"
 else

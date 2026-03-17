@@ -42,11 +42,11 @@ else
   echo "✓ Unknown domain exits 1"
 fi
 
-# Test 10: commande stub retourne exit code 1 (pas encore implémentée)
-if $BINARY events today > /dev/null 2>&1; then
-  echo "✗ Stub command should exit 1"; exit 1
+# Test 10: sous-commande inconnue retourne exit code 1
+if $BINARY events foobar > /dev/null 2>&1; then
+  echo "✗ Unknown subcommand should exit 1"; exit 1
 else
-  echo "✓ Stub command exits 1"
+  echo "✓ Unknown subcommand exits 1"
 fi
 
 echo ""
