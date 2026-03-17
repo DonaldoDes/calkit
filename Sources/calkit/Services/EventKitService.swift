@@ -63,7 +63,7 @@ class EventKitService {
     /// When source.title matches the type name (e.g. "iCloud"), no duplication: just "iCloud".
     func fetchCalendars() -> [CKCalendar] {
         let ekCalendars = store.calendars(for: .event)
-        return ekCalendars.map { cal in
+        let mapped = ekCalendars.map { cal in
             CKCalendar(
                 id: cal.calendarIdentifier,
                 title: cal.title,
@@ -71,6 +71,7 @@ class EventKitService {
                 color: cgColorToHex(cal.cgColor)
             )
         }
+        return CKCalendar.sortedAlphabetically(mapped)
     }
 
     /// Build the source display string: "account (type)" or just "title" if redundant.

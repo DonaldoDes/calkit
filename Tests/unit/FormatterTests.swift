@@ -141,6 +141,22 @@ struct TestRunner {
             assertEqual(mid, "#808080", "0.5 should map to 0x80 (128)")
         }
 
+        // --- Calendar Sorting Tests ---
+
+        runTest("calendars_sortedAlphabetically_caseInsensitive") {
+            let unsorted = [
+                CKCalendar(id: "1", title: "Travail", source: "iCloud", color: "#000"),
+                CKCalendar(id: "2", title: "anniversaires", source: "iCloud", color: "#000"),
+                CKCalendar(id: "3", title: "Perso", source: "Google", color: "#000"),
+                CKCalendar(id: "4", title: "Réunions", source: "Exchange", color: "#000"),
+                CKCalendar(id: "5", title: "école", source: "iCloud", color: "#000")
+            ]
+            let sorted = CKCalendar.sortedAlphabetically(unsorted)
+            let titles = sorted.map { $0.title }
+            assertEqual(titles, ["anniversaires", "école", "Perso", "Réunions", "Travail"],
+                        "Calendars should be sorted case-insensitive alphabetically")
+        }
+
         // --- Event Text Formatter Tests ---
 
         runTest("formatEventsText_empty") {
