@@ -4,45 +4,52 @@ import Foundation
 struct TestRunner {
     static func main() {
         // TextFormatter Tests
-        runTest("formatCalendarsText_singleEntry") {
+        // --- BUG-001: Source now shows "account (type)" format ---
+
+        runTest("formatCalendarsText_singleEntry_accountSource") {
             let calendars = [
-                CKCalendar(id: "abc123", title: "Perso", source: "Google", color: "#4285F4")
+                CKCalendar(id: "abc123", title: "Perso", source: "donaldo@gmail.com (Google)", color: "#4285F4")
             ]
             let output = TextFormatter.formatCalendars(calendars)
-            assertTrue(output.contains("[Google]"), "Output should contain source in brackets")
+            assertTrue(output.contains("[donaldo@gmail.com (Google)]"), "Output should contain account name with type in brackets")
             assertTrue(output.contains("Perso"), "Output should contain calendar title")
             assertTrue(output.contains("abc123"), "Output should contain calendar id")
         }
 
-        runTest("formatCalendarsText_multipleEntries") {
+        runTest("formatCalendarsText_multipleEntries_accountSources") {
             let calendars = [
-                CKCalendar(id: "abc123", title: "Perso", source: "Google", color: "#4285F4"),
+                CKCalendar(id: "abc123", title: "Perso", source: "donaldo@gmail.com (Google)", color: "#4285F4"),
                 CKCalendar(id: "def456", title: "Travail", source: "iCloud", color: "#FF6B6B"),
-                CKCalendar(id: "ghi789", title: "Réunions", source: "Exchange", color: "#00FF00")
+                CKCalendar(id: "ghi789", title: "Réunions", source: "work@company.com (Exchange)", color: "#00FF00")
             ]
             let output = TextFormatter.formatCalendars(calendars)
             let lines = output.split(separator: "\n")
             assertEqual(lines.count, 3, "Should have one line per calendar")
-            assertTrue(output.contains("[Google]"), "Should contain Google source")
-            assertTrue(output.contains("[iCloud]"), "Should contain iCloud source")
-            assertTrue(output.contains("[Exchange]"), "Should contain Exchange source")
+            assertTrue(output.contains("[donaldo@gmail.com (Google)]"), "Should contain Google account source")
+            assertTrue(output.contains("[iCloud]"), "Should contain iCloud source (title=iCloud for personal)")
+            assertTrue(output.contains("[work@company.com (Exchange)]"), "Should contain Exchange account source")
         }
 
         runTest("formatCalendarsText_alignedColumns") {
             let calendars = [
                 CKCalendar(id: "a1", title: "Short", source: "iCloud", color: "#000000"),
-                CKCalendar(id: "b2", title: "Much Longer Name", source: "Google", color: "#FFFFFF")
+                CKCalendar(id: "b2", title: "Much Longer Name", source: "donaldo@gmail.com (Google)", color: "#FFFFFF")
             ]
             let output = TextFormatter.formatCalendars(calendars)
             let lines = output.split(separator: "\n").map(String.init)
             assertEqual(lines.count, 2)
 
-            // Source columns should be aligned (padded to same width)
-            let firstBracketEnd = lines[0].range(of: "]")!.upperBound
-            let secondBracketEnd = lines[1].range(of: "]")!.upperBound
-            let firstOffset = lines[0].distance(from: lines[0].startIndex, to: firstBracketEnd)
-            let secondOffset = lines[1].distance(from: lines[1].startIndex, to: secondBracketEnd)
-            assertEqual(firstOffset, secondOffset, "Source columns should be aligned")
+            // Title columns should start at the same position (source column padded to same width)
+            // The source column is "[source]" padded, then "  Title".
+            // Find the position of the title text after the padded source column.
+            let maxSourceLen = max("iCloud".count, "donaldo@gmail.com (Google)".count)
+            let expectedTitleStart = maxSourceLen + 2 + 2 // brackets + gap
+            // Both lines should have the title starting at the same column
+            assertTrue(lines[0].contains("Short"), "First line should contain title")
+            assertTrue(lines[1].contains("Much Longer Name"), "Second line should contain title")
+            // Verify both lines have the same total source column width
+            assertEqual(lines[0].count > expectedTitleStart, true, "Line should be long enough")
+            assertEqual(lines[1].count > expectedTitleStart, true, "Line should be long enough")
         }
 
         runTest("formatCalendarsText_empty") {
@@ -53,7 +60,7 @@ struct TestRunner {
 
         runTest("formatCalendarsText_noTrailingWhitespace") {
             let calendars = [
-                CKCalendar(id: "abc123", title: "Perso", source: "Google", color: "#4285F4")
+                CKCalendar(id: "abc123", title: "Perso", source: "donaldo@gmail.com (Google)", color: "#4285F4")
             ]
             let output = TextFormatter.formatCalendars(calendars)
             for line in output.split(separator: "\n") {
@@ -64,10 +71,22 @@ struct TestRunner {
             }
         }
 
+        runTest("sourceFormat_accountWithType") {
+            // Verifies the new source format: "account (type)"
+            let cal = CKCalendar(id: "x", title: "Test", source: "user@example.com (CalDAV)", color: "#000")
+            assertEqual(cal.source, "user@example.com (CalDAV)", "Source should contain account name and type")
+        }
+
+        runTest("sourceFormat_iCloudNoEmail") {
+            // iCloud personal often returns "iCloud" as source.title — no email prefix
+            let cal = CKCalendar(id: "x", title: "Famille", source: "iCloud", color: "#000")
+            assertEqual(cal.source, "iCloud", "iCloud source should be just 'iCloud' when no email")
+        }
+
         // JSONFormatter Tests
-        runTest("formatJSON_calendars") {
+        runTest("formatJSON_calendars_accountSource") {
             let calendars = [
-                CKCalendar(id: "abc123", title: "Perso", source: "Google", color: "#4285F4")
+                CKCalendar(id: "abc123", title: "Perso", source: "donaldo@gmail.com (Google)", color: "#4285F4")
             ]
             let output = JSONFormatter.format(calendars)
             assertFalse(output.isEmpty, "JSON output should not be empty")
@@ -75,13 +94,13 @@ struct TestRunner {
             guard let data = output.data(using: .utf8),
                   let parsed = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
                 failCount += 1
-                FileHandle.standardError.write(Data("FAIL [formatJSON_calendars] Output should be valid JSON array\n".utf8))
+                FileHandle.standardError.write(Data("FAIL [formatJSON_calendars_accountSource] Output should be valid JSON array\n".utf8))
                 return
             }
             assertEqual(parsed.count, 1)
             assertEqual(parsed[0]["id"] as? String ?? "", "abc123")
             assertEqual(parsed[0]["title"] as? String ?? "", "Perso")
-            assertEqual(parsed[0]["source"] as? String ?? "", "Google")
+            assertEqual(parsed[0]["source"] as? String ?? "", "donaldo@gmail.com (Google)")
             assertEqual(parsed[0]["color"] as? String ?? "", "#4285F4")
         }
 

@@ -59,16 +59,28 @@ class EventKitService {
     }
 
     /// Fetch all calendars mapped to CKCalendar.
+    /// Source format: "account (type)" using source.title (account name) + sourceType.
+    /// When source.title matches the type name (e.g. "iCloud"), no duplication: just "iCloud".
     func fetchCalendars() -> [CKCalendar] {
         let ekCalendars = store.calendars(for: .event)
         return ekCalendars.map { cal in
             CKCalendar(
                 id: cal.calendarIdentifier,
                 title: cal.title,
-                source: sourceTypeName(cal.source.sourceType),
+                source: formatSource(title: cal.source.title, type: cal.source.sourceType),
                 color: cgColorToHex(cal.cgColor)
             )
         }
+    }
+
+    /// Build the source display string: "account (type)" or just "title" if redundant.
+    private func formatSource(title: String, type: EKSourceType) -> String {
+        let typeName = sourceTypeName(type)
+        // If the title is the same as the type name, no need to duplicate
+        if title == typeName {
+            return title
+        }
+        return "\(title) (\(typeName))"
     }
 
     /// Convert EKSourceType to human-readable string.
