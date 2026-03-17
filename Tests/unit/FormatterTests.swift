@@ -143,7 +143,7 @@ struct TestRunner {
 
         // --- Calendar Sorting Tests ---
 
-        runTest("calendars_sortedAlphabetically_caseInsensitive") {
+        runTest("calendars_sortedAlphabetically_bySourceThenTitle") {
             let unsorted = [
                 CKCalendar(id: "1", title: "Travail", source: "iCloud", color: "#000"),
                 CKCalendar(id: "2", title: "anniversaires", source: "iCloud", color: "#000"),
@@ -153,8 +153,9 @@ struct TestRunner {
             ]
             let sorted = CKCalendar.sortedAlphabetically(unsorted)
             let titles = sorted.map { $0.title }
-            assertEqual(titles, ["anniversaires", "école", "Perso", "Réunions", "Travail"],
-                        "Calendars should be sorted case-insensitive alphabetically")
+            // Expected: Exchange first, then Google, then iCloud (3 calendars sorted by title within)
+            assertEqual(titles, ["Réunions", "Perso", "anniversaires", "école", "Travail"],
+                        "Calendars should be sorted by source first, then by title within each source")
         }
 
         // --- Event Text Formatter Tests ---

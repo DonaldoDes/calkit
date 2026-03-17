@@ -6,8 +6,12 @@ struct CKCalendar: Codable {
     let source: String      // "account (type)" e.g. "donaldo@gmail.com (Google)", or "iCloud" if title=type
     let color: String       // Hex "#RRGGBB"
 
-    /// Sort calendars alphabetically by title (case-insensitive, locale-aware).
+    /// Sort calendars by source (account) first, then by title (case-insensitive, locale-aware).
     static func sortedAlphabetically(_ calendars: [CKCalendar]) -> [CKCalendar] {
-        calendars.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+        calendars.sorted {
+            let sourceCompare = $0.source.localizedCaseInsensitiveCompare($1.source)
+            if sourceCompare != .orderedSame { return sourceCompare == .orderedAscending }
+            return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
+        }
     }
 }
