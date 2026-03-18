@@ -261,7 +261,9 @@ struct TestRunner {
                 dueDate: "2026-03-16T09:00:00+01:00",
                 notes: nil,
                 creationDate: "2026-03-15T08:00:00+01:00",
-                completionDate: "2026-03-16T10:30:00+01:00"
+                completionDate: "2026-03-16T10:30:00+01:00",
+                alarms: nil,
+                recurrenceRules: nil
             )
             let json = JSONFormatter.format(reminder)
             guard let data = json.data(using: .utf8),
@@ -285,7 +287,9 @@ struct TestRunner {
                 dueDate: nil,
                 notes: nil,
                 creationDate: "2026-03-15T08:00:00+01:00",
-                completionDate: nil
+                completionDate: nil,
+                alarms: nil,
+                recurrenceRules: nil
             )
             let json = JSONFormatter.format(reminder)
             guard let data = json.data(using: .utf8),

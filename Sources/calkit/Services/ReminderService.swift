@@ -194,6 +194,24 @@ extension EventKitService {
             completionDateStr = EventDateParser.formatISO8601(completionDate)
         }
 
+        // Map alarms: extract absoluteDate from each EKAlarm
+        var alarmsArr: [String]? = nil
+        if let ekAlarms = ekReminder.alarms, !ekAlarms.isEmpty {
+            let dates = ekAlarms.compactMap { alarm -> String? in
+                guard let absDate = alarm.absoluteDate else { return nil }
+                return EventDateParser.formatISO8601(absDate)
+            }
+            if !dates.isEmpty {
+                alarmsArr = dates
+            }
+        }
+
+        // Map recurrence rules via RecurrenceParser.format()
+        var rulesArr: [String]? = nil
+        if let ekRules = ekReminder.recurrenceRules, !ekRules.isEmpty {
+            rulesArr = ekRules.map { RecurrenceParser.format($0) }
+        }
+
         return CKReminder(
             id: ekReminder.calendarItemIdentifier,
             title: ekReminder.title ?? "",
@@ -204,7 +222,9 @@ extension EventKitService {
             dueDate: dueDateStr,
             notes: ekReminder.notes,
             creationDate: creationDateStr,
-            completionDate: completionDateStr
+            completionDate: completionDateStr,
+            alarms: alarmsArr,
+            recurrenceRules: rulesArr
         )
     }
 
@@ -212,7 +232,8 @@ extension EventKitService {
 
     /// Create a new reminder in EventKit. Returns the created CKReminder.
     func createReminder(title: String, listName: String?, dueDate: String?,
-                        priority: Int, notes: String?) throws -> CKReminder {
+                        priority: Int, notes: String?,
+                        alarm: String?, recurrence: String?) throws -> CKReminder {
         let reminder = EKReminder(eventStore: store)
         reminder.title = title
 
@@ -235,6 +256,17 @@ extension EventKitService {
 
         if let notes = notes {
             reminder.notes = notes
+        }
+
+        // Alarm
+        if let alarmStr = alarm, let alarmDate = EventDateParser.parseDate(alarmStr) {
+            let ekAlarm = EKAlarm(absoluteDate: alarmDate)
+            reminder.addAlarm(ekAlarm)
+        }
+
+        // Recurrence rule
+        if let rruleStr = recurrence, let rule = RecurrenceParser.parse(rruleStr) {
+            reminder.addRecurrenceRule(rule)
         }
 
         try store.save(reminder, commit: true)

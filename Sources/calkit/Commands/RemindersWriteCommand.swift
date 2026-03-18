@@ -12,7 +12,7 @@ enum RemindersWriteCommand {
             print("""
                 calkit reminders create — Creer un nouveau rappel
 
-                Usage: calkit reminders create <titre> [--list <nom>] [--due <datetime>] [--priority <1-9>] [--notes <texte>] [--json]
+                Usage: calkit reminders create <titre> [--list <nom>] [--due <datetime>] [--priority <1-9>] [--notes <texte>] [--alarm <datetime>] [--recurrence <rule>] [--json]
 
                 Arguments:
                   <titre>       Titre du rappel (obligatoire)
@@ -22,6 +22,8 @@ enum RemindersWriteCommand {
                   --due         Date d'echeance (format YYYY-MM-DDTHH:MM:SS ou YYYY-MM-DD)
                   --priority    Priorite de 0 a 9 (1=haute, 9=basse, 0=aucune, defaut 0)
                   --notes       Notes associees
+                  --alarm       Date/heure de declenchement de l'alerte (format YYYY-MM-DDTHH:MM:SS)
+                  --recurrence  Regle de recurrence (FREQ=DAILY, FREQ=WEEKLY;BYDAY=MO,WE,FR, FREQ=MONTHLY, FREQ=YEARLY)
                   --json        Sortie au format JSON
                   --help, -h    Afficher cette aide
 
@@ -29,6 +31,8 @@ enum RemindersWriteCommand {
                   calkit reminders create "Appeler le medecin"
                   calkit reminders create "Faire les courses" --list "Courses" --due 2026-03-25T10:00:00
                   calkit reminders create "Preparer la demo" --list "Travail" --due 2026-03-25T09:00:00 --priority 1 --notes "Inclure les slides"
+                  calkit reminders create "Reunion hebdo" --due 2026-03-25T09:00:00 --alarm 2026-03-25T08:30:00 --recurrence FREQ=WEEKLY
+                  calkit reminders create "Standup" --due 2026-03-20T09:00:00 --recurrence FREQ=DAILY --alarm 2026-03-20T08:55:00
                 """)
             if args.isEmpty {
                 exit(1)
@@ -61,7 +65,9 @@ enum RemindersWriteCommand {
                 listName: parsed.listName,
                 dueDate: parsed.dueDate,
                 priority: parsed.priority,
-                notes: parsed.notes
+                notes: parsed.notes,
+                alarm: parsed.alarm,
+                recurrence: parsed.recurrence
             )
 
             if parsed.useJSON {

@@ -7,6 +7,8 @@ struct CreateReminderArgs {
     let dueDate: String?
     let priority: Int       // 0-9, default 0
     let notes: String?
+    let alarm: String?      // ISO 8601 datetime for alarm trigger
+    let recurrence: String? // RRULE string (e.g. FREQ=DAILY, FREQ=WEEKLY;BYDAY=MO,WE)
     let useJSON: Bool
 
     /// Parse raw CLI arguments into CreateReminderArgs.
@@ -15,7 +17,7 @@ struct CreateReminderArgs {
         var positional: [String] = []
         var options: [String: String] = [:]
         var flags: Set<String> = []
-        let valuedOptions: Set<String> = ["--list", "--due", "--priority", "--notes"]
+        let valuedOptions: Set<String> = ["--list", "--due", "--priority", "--notes", "--alarm", "--recurrence"]
 
         var i = 0
         while i < args.count {
@@ -59,12 +61,28 @@ struct CreateReminderArgs {
             }
         }
 
+        // Alarm date validation (if provided)
+        if let alarmStr = options["--alarm"] {
+            guard EventDateParser.parseDate(alarmStr) != nil else {
+                return .failure(ParseError(message: "date d'alarme invalide : '\(alarmStr)'. Format attendu : YYYY-MM-DDTHH:MM:SS ou YYYY-MM-DD"))
+            }
+        }
+
+        // Recurrence rule validation (if provided)
+        if let rruleStr = options["--recurrence"] {
+            guard RecurrenceParser.parse(rruleStr) != nil else {
+                return .failure(ParseError(message: "règle de récurrence invalide : '\(rruleStr)'. Formats supportés : FREQ=DAILY, FREQ=WEEKLY, FREQ=WEEKLY;BYDAY=MO,WE,FR, FREQ=MONTHLY, FREQ=YEARLY"))
+            }
+        }
+
         return .success(CreateReminderArgs(
             title: title,
             listName: options["--list"],
             dueDate: options["--due"],
             priority: priority,
             notes: options["--notes"],
+            alarm: options["--alarm"],
+            recurrence: options["--recurrence"],
             useJSON: flags.contains("--json")
         ))
     }

@@ -19,6 +19,40 @@ enum RecurrenceParser {
         "SU": .sunday
     ]
 
+    /// Reverse mapping from EKWeekday to day abbreviation.
+    private static let reverseDayMap: [EKWeekday: String] = [
+        .monday: "MO",
+        .tuesday: "TU",
+        .wednesday: "WE",
+        .thursday: "TH",
+        .friday: "FR",
+        .saturday: "SA",
+        .sunday: "SU"
+    ]
+
+    /// Format an EKRecurrenceRule into a simplified RRULE string.
+    static func format(_ rule: EKRecurrenceRule) -> String {
+        let freqStr: String
+        switch rule.frequency {
+        case .daily:   freqStr = "DAILY"
+        case .weekly:  freqStr = "WEEKLY"
+        case .monthly: freqStr = "MONTHLY"
+        case .yearly:  freqStr = "YEARLY"
+        @unknown default: freqStr = "DAILY"
+        }
+
+        var result = "FREQ=\(freqStr)"
+
+        if let days = rule.daysOfTheWeek, !days.isEmpty {
+            let dayStrs = days.compactMap { reverseDayMap[$0.dayOfTheWeek] }
+            if !dayStrs.isEmpty {
+                result += ";BYDAY=\(dayStrs.joined(separator: ","))"
+            }
+        }
+
+        return result
+    }
+
     /// Parse an RRULE string into an EKRecurrenceRule.
     /// Returns nil if the string is not a recognized format.
     static func parse(_ rrule: String) -> EKRecurrenceRule? {
