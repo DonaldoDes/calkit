@@ -5,6 +5,7 @@ import Foundation
 enum CreateEventError: Error {
     case calendarNotFound(String)
     case ambiguousCalendar(String)
+    case calendarIdNotFound(String)
 }
 
 /// Errors specific to event update.
@@ -20,7 +21,7 @@ enum DeleteEventError: Error {
 class EventKitService {
     static let shared = EventKitService()
 
-    private let store = EKEventStore()
+    let store = EKEventStore()
 
     private init() {}
 
@@ -105,7 +106,7 @@ class EventKitService {
     }
 
     /// Convert CGColor to hex string "#RRGGBB".
-    private func cgColorToHex(_ cgColor: CGColor) -> String {
+    func cgColorToHex(_ cgColor: CGColor) -> String {
         guard let components = cgColor.components, components.count >= 3 else {
             return "#000000"
         }
@@ -174,35 +175,23 @@ class EventKitService {
 
     /// Create a new event in EventKit. Returns the created CKEvent.
     /// Throws if the save fails or if the specified calendar is not found/ambiguous.
-    func createEvent(title: String, start: Date, end: Date, calendarName: String?,
-                     location: String?, notes: String?, recurrenceRule: String?) throws -> CKEvent {
+    func createEvent(title: String, start: Date, end: Date, calendarId: String?,
+                     calendarName: String?, location: String?, notes: String?,
+                     recurrenceRule: String?) throws -> CKEvent {
         let event = EKEvent(eventStore: store)
         event.title = title
         event.startDate = start
         event.endDate = end
 
-        // Calendar resolution
-        if let name = calendarName {
+        // Calendar resolution: --calendar-id takes priority over --calendar
+        if let id = calendarId {
             let allCalendars = store.calendars(for: .event)
-            // Try exact match first
-            let exactMatches = allCalendars.filter { $0.title == name }
-            if exactMatches.count == 1 {
-                event.calendar = exactMatches[0]
-            } else if exactMatches.count > 1 {
-                throw CreateEventError.ambiguousCalendar(name)
-            } else {
-                // Try substring match
-                let substringMatches = allCalendars.filter {
-                    $0.title.localizedCaseInsensitiveContains(name)
-                }
-                if substringMatches.count == 1 {
-                    event.calendar = substringMatches[0]
-                } else if substringMatches.count > 1 {
-                    throw CreateEventError.ambiguousCalendar(name)
-                } else {
-                    throw CreateEventError.calendarNotFound(name)
-                }
+            guard let match = allCalendars.first(where: { $0.calendarIdentifier == id }) else {
+                throw CreateEventError.calendarIdNotFound(id)
             }
+            event.calendar = match
+        } else if let name = calendarName {
+            event.calendar = try resolveCalendar(named: name, for: .event)
         } else {
             event.calendar = store.defaultCalendarForNewEvents
         }
@@ -287,6 +276,40 @@ class EventKitService {
         try store.remove(ekEvent, span: span, commit: true)
 
         return (title: title, span: spanStr)
+    }
+
+    /// Resolve a calendar by name for the given entity type.
+    /// Strategy: exact-match (1 result) > substring-match (1 result) > error.
+    /// Throws calendarNotFound/ambiguous for events, listNotFound/listAmbiguous for reminders.
+    func resolveCalendar(named name: String, for entityType: EKEntityType) throws -> EKCalendar {
+        let allCalendars = store.calendars(for: entityType)
+        let exactMatches = allCalendars.filter { $0.title == name }
+        if exactMatches.count == 1 {
+            return exactMatches[0]
+        } else if exactMatches.count > 1 {
+            if entityType == .event {
+                throw CreateEventError.ambiguousCalendar(name)
+            } else {
+                throw ReminderError.listAmbiguous(name)
+            }
+        }
+        let substringMatches = allCalendars.filter {
+            $0.title.localizedCaseInsensitiveContains(name)
+        }
+        if substringMatches.count == 1 {
+            return substringMatches[0]
+        } else if substringMatches.count > 1 {
+            if entityType == .event {
+                throw CreateEventError.ambiguousCalendar(name)
+            } else {
+                throw ReminderError.listAmbiguous(name)
+            }
+        }
+        if entityType == .event {
+            throw CreateEventError.calendarNotFound(name)
+        } else {
+            throw ReminderError.listNotFound(name)
+        }
     }
 
     /// Public helper for hex conversion from RGB floats (0.0-1.0).
