@@ -18,7 +18,7 @@ build: $(SOURCES)
 		-O
 
 clean:
-	rm -f $(BINARY) calkit-tests calkit-search-tests calkit-create-tests calkit-update-tests calkit-delete-tests
+	rm -f $(BINARY) calkit-tests calkit-search-tests calkit-create-tests calkit-update-tests calkit-delete-tests calkit-reminder-formatter-tests calkit-create-reminder-tests calkit-reminder-cmd-tests
 
 install: build
 	cp $(BINARY) $(INSTALL_PATH)
@@ -74,6 +74,33 @@ test-unit:
 		$(TEST_FW) \
 		Tests/unit/DeleteCommandTests.swift \
 		-o ./calkit-delete-tests && ./calkit-delete-tests
+	swiftc \
+		-framework EventKit \
+		-framework Foundation \
+		Sources/calkit/Models/*.swift \
+		Sources/calkit/Output/*.swift \
+		Sources/calkit/Services/*.swift \
+		$(TEST_FW) \
+		Tests/unit/ReminderFormatterTests.swift \
+		-o ./calkit-reminder-formatter-tests && ./calkit-reminder-formatter-tests
+	swiftc \
+		-framework EventKit \
+		-framework Foundation \
+		Sources/calkit/Models/*.swift \
+		Sources/calkit/Output/*.swift \
+		Sources/calkit/Services/*.swift \
+		$(TEST_FW) \
+		Tests/unit/CreateReminderCommandTests.swift \
+		-o ./calkit-create-reminder-tests && ./calkit-create-reminder-tests
+	swiftc \
+		-framework EventKit \
+		-framework Foundation \
+		Sources/calkit/Models/*.swift \
+		Sources/calkit/Output/*.swift \
+		Sources/calkit/Services/*.swift \
+		$(TEST_FW) \
+		Tests/unit/ReminderCommandTests.swift \
+		-o ./calkit-reminder-cmd-tests && ./calkit-reminder-cmd-tests
 
 test-smoke: build
 	bash Tests/smoke.sh
@@ -85,5 +112,8 @@ test-integration: build
 	bash Tests/integration/events_create.sh
 	bash Tests/integration/events_update.sh
 	bash Tests/integration/events_delete.sh
+	bash Tests/integration/reminders_lists.sh
+	bash Tests/integration/reminders_list.sh
+	bash Tests/integration/reminders_crud.sh
 
 test: test-unit test-smoke test-integration

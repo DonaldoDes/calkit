@@ -137,6 +137,95 @@ enum TextFormatter {
             """
     }
 
+    // MARK: - Reminder Formatting
+
+    /// Format reminder lists as aligned text columns.
+    /// Output: [Source]  Title  (N pending)  (id: xxx)
+    static func formatReminderLists(_ lists: [CKReminderList]) -> String {
+        if lists.isEmpty { return "" }
+
+        let maxSourceLen = lists.map { $0.source.count }.max() ?? 0
+        let maxTitleLen = lists.map { $0.title.count }.max() ?? 0
+
+        return lists.map { list in
+            let paddedSource = "[\(list.source)]".padding(
+                toLength: maxSourceLen + 2,
+                withPad: " ",
+                startingAt: 0
+            )
+            let paddedTitle = list.title.padding(
+                toLength: maxTitleLen,
+                withPad: " ",
+                startingAt: 0
+            )
+            return "\(paddedSource)  \(paddedTitle)  (\(list.pendingCount) pending)  (id: \(list.id))"
+        }.joined(separator: "\n")
+    }
+
+    /// Format reminders as human-readable text.
+    /// Returns "Aucun rappel trouvé" if the list is empty.
+    static func formatReminders(_ reminders: [CKReminder]) -> String {
+        if reminders.isEmpty {
+            return "Aucun rappel trouvé"
+        }
+
+        return reminders.map { formatSingleReminder($0) }.joined(separator: "\n")
+    }
+
+    /// Format the confirmation output for a newly created reminder.
+    static func formatCreatedReminder(_ reminder: CKReminder) -> String {
+        var lines = [
+            "Rappel créé.",
+            "  ID     : \(reminder.id)",
+            "  Titre  : \(reminder.title)",
+            "  Liste  : \(reminder.list)"
+        ]
+        if let dueDate = reminder.dueDate {
+            lines.append("  Échéance : \(dueDate)")
+        }
+        if reminder.priority > 0 {
+            lines.append("  Priorité : \(reminder.priority)")
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    /// Format the confirmation output for a completed reminder.
+    static func formatCompletedReminder(id: String, title: String) -> String {
+        return """
+            Rappel complété.
+              ID    : \(id)
+              Titre : \(title)
+            """
+    }
+
+    /// Format the confirmation output for a deleted reminder.
+    static func formatDeletedReminder(id: String, title: String) -> String {
+        return """
+            Rappel supprimé.
+              ID    : \(id)
+              Titre : \(title)
+            """
+    }
+
+    /// Format a single reminder line: "○/✓  Title  [List]  (due: date)  (id: xxx)"
+    private static func formatSingleReminder(_ reminder: CKReminder) -> String {
+        let status = reminder.isCompleted ? "✓" : "○"
+        var parts = ["\(status)  \(reminder.title)  [\(reminder.list)]"]
+
+        if reminder.priority > 0 {
+            parts.append("!\(reminder.priority)")
+        }
+
+        if let dueDate = reminder.dueDate {
+            let dateOnly = EventDateParser.extractDate(dueDate)
+            parts.append("(due: \(dateOnly))")
+        }
+
+        parts.append("(id: \(reminder.id))")
+
+        return parts.joined(separator: "  ")
+    }
+
     /// Format a single event line: "HH:MM–HH:MM  Title  [Calendar]"
     /// or "(Toute la journée) Title  [Calendar]" for all-day events.
     private static func formatSingleEvent(_ event: CKEvent) -> String {

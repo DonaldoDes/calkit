@@ -52,6 +52,16 @@ if Help.validDomains.contains(first) {
         EventsWriteCommand.runUpdate(args: actionArgs)
     case ("events", "delete"):
         EventsWriteCommand.runDelete(args: actionArgs)
+    case ("reminders", "lists"):
+        RemindersReadCommand.runLists(args: actionArgs)
+    case ("reminders", "list"):
+        RemindersReadCommand.runList(args: actionArgs)
+    case ("reminders", "create"):
+        RemindersWriteCommand.runCreate(args: actionArgs)
+    case ("reminders", "complete"):
+        RemindersWriteCommand.runComplete(args: actionArgs)
+    case ("reminders", "delete"):
+        RemindersWriteCommand.runDelete(args: actionArgs)
     default:
         printError("'\(domain) \(action)' n'est pas encore implémenté.")
         exit(1)

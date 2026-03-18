@@ -10,6 +10,7 @@ struct CreateEventArgs {
     let title: String
     let startStr: String
     let endStr: String
+    let calendarId: String?
     let calendarName: String?
     let location: String?
     let notes: String?
@@ -23,7 +24,7 @@ struct CreateEventArgs {
         var positional: [String] = []
         var options: [String: String] = [:]
         var flags: Set<String> = []
-        let valuedOptions: Set<String> = ["--start", "--end", "--calendar", "--location", "--notes", "--recurrence"]
+        let valuedOptions: Set<String> = ["--start", "--end", "--calendar", "--calendar-id", "--location", "--notes", "--recurrence"]
 
         var i = 0
         while i < args.count {
@@ -71,6 +72,7 @@ struct CreateEventArgs {
             title: title,
             startStr: startStr,
             endStr: endStr,
+            calendarId: options["--calendar-id"],
             calendarName: options["--calendar"],
             location: options["--location"],
             notes: options["--notes"],

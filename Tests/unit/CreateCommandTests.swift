@@ -63,6 +63,36 @@ struct CreateTestRunner {
             }
         }
 
+        runTest("testParseCreateArgs_withCalendarId") {
+            let args = ["Réunion", "--start", "2026-03-20T14:00:00", "--end", "2026-03-20T15:00:00",
+                        "--calendar-id", "ABC-123"]
+            let result = CreateEventArgs.parse(args)
+            switch result {
+            case .success(let parsed):
+                assertEqual(parsed.calendarId ?? "", "ABC-123")
+                // calendarName should be nil when only --calendar-id is provided
+                assertTrue(parsed.calendarName == nil, "calendarName should be nil when only --calendar-id is given")
+            case .failure(let err):
+                failCount += 1
+                FileHandle.standardError.write(Data("FAIL [\(currentTest)] unexpected error: \(err)\n".utf8))
+            }
+        }
+
+        runTest("testParseCreateArgs_withCalendarIdAndCalendar") {
+            let args = ["Réunion", "--start", "2026-03-20T14:00:00", "--end", "2026-03-20T15:00:00",
+                        "--calendar-id", "ABC-123", "--calendar", "Travail"]
+            let result = CreateEventArgs.parse(args)
+            switch result {
+            case .success(let parsed):
+                // Both should be parsed; priority is handled at service level
+                assertEqual(parsed.calendarId ?? "", "ABC-123")
+                assertEqual(parsed.calendarName ?? "", "Travail")
+            case .failure(let err):
+                failCount += 1
+                FileHandle.standardError.write(Data("FAIL [\(currentTest)] unexpected error: \(err)\n".utf8))
+            }
+        }
+
         // --- Output Formatting Tests ---
 
         runTest("testFormatCreatedEventText") {

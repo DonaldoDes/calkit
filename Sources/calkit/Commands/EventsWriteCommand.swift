@@ -17,6 +17,7 @@ enum EventsWriteCommand {
                 Options:
                   --start       Date/heure de début (obligatoire, format YYYY-MM-DDTHH:MM:SS)
                   --end         Date/heure de fin (obligatoire, format YYYY-MM-DDTHH:MM:SS)
+                  --calendar-id UUID du calendrier (prioritaire sur --calendar)
                   --calendar    Nom du calendrier cible (défaut : calendrier par défaut)
                   --location    Lieu de l'événement
                   --notes       Notes associées
@@ -69,6 +70,7 @@ enum EventsWriteCommand {
                 title: parsed.title,
                 start: startDate,
                 end: endDate,
+                calendarId: parsed.calendarId,
                 calendarName: parsed.calendarName,
                 location: parsed.location,
                 notes: parsed.notes,
@@ -88,6 +90,9 @@ enum EventsWriteCommand {
                 exit(4)
             case .ambiguousCalendar(let name):
                 printError("calendrier '\(name)' ambigu — plusieurs calendriers correspondent.")
+                exit(4)
+            case .calendarIdNotFound(let id):
+                printError("calendrier avec l'id '\(id)' introuvable.")
                 exit(4)
             }
         } catch {
