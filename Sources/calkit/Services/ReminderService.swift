@@ -189,6 +189,11 @@ extension EventKitService {
             creationDateStr = EventDateParser.formatISO8601(creationDate)
         }
 
+        var completionDateStr: String? = nil
+        if let completionDate = ekReminder.completionDate {
+            completionDateStr = EventDateParser.formatISO8601(completionDate)
+        }
+
         return CKReminder(
             id: ekReminder.calendarItemIdentifier,
             title: ekReminder.title ?? "",
@@ -198,7 +203,8 @@ extension EventKitService {
             priority: ekReminder.priority,
             dueDate: dueDateStr,
             notes: ekReminder.notes,
-            creationDate: creationDateStr
+            creationDate: creationDateStr,
+            completionDate: completionDateStr
         )
     }
 

@@ -18,6 +18,7 @@ struct CKReminder: Encodable {
     let dueDate: String?    // ISO 8601 or nil
     let notes: String?
     let creationDate: String? // ISO 8601
+    let completionDate: String? // ISO 8601 or nil
 }
 
 /// Result of a reminder action (complete, delete) for JSON output.

@@ -248,6 +248,59 @@ struct TestRunner {
             }
         }
 
+        // --- completionDate in CKReminder JSON output ---
+
+        runTest("reminderJSON_completionDate_present_when_completed") {
+            let reminder = CKReminder(
+                id: "rem-001",
+                title: "Buy milk",
+                list: "Reminders",
+                listId: "list-001",
+                isCompleted: true,
+                priority: 0,
+                dueDate: "2026-03-16T09:00:00+01:00",
+                notes: nil,
+                creationDate: "2026-03-15T08:00:00+01:00",
+                completionDate: "2026-03-16T10:30:00+01:00"
+            )
+            let json = JSONFormatter.format(reminder)
+            guard let data = json.data(using: .utf8),
+                  let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                failCount += 1
+                FileHandle.standardError.write(Data("FAIL [reminderJSON_completionDate] Output should be valid JSON\n".utf8))
+                return
+            }
+            assertEqual(parsed["completionDate"] as? String ?? "", "2026-03-16T10:30:00+01:00",
+                         "completionDate should be present in JSON output")
+        }
+
+        runTest("reminderJSON_completionDate_null_when_not_completed") {
+            let reminder = CKReminder(
+                id: "rem-002",
+                title: "Call dentist",
+                list: "Reminders",
+                listId: "list-001",
+                isCompleted: false,
+                priority: 0,
+                dueDate: nil,
+                notes: nil,
+                creationDate: "2026-03-15T08:00:00+01:00",
+                completionDate: nil
+            )
+            let json = JSONFormatter.format(reminder)
+            guard let data = json.data(using: .utf8),
+                  let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                failCount += 1
+                FileHandle.standardError.write(Data("FAIL [reminderJSON_completionDate_null] Output should be valid JSON\n".utf8))
+                return
+            }
+            // completionDate should be null (absent from parsed dict since JSONSerialization drops null by default)
+            // or explicitly null — either way it should NOT be a non-nil string
+            let completionDate = parsed["completionDate"]
+            assertTrue(completionDate == nil || completionDate is NSNull,
+                       "completionDate should be null for incomplete reminder")
+        }
+
         reportResults()
     }
 }
