@@ -13,6 +13,14 @@ enum ReminderListError: Error {
     case noSourceAvailable
 }
 
+/// Lightweight representation of an EKSource for testable source selection.
+struct SourceCandidate {
+    let title: String
+    let sourceType: EKSourceType
+    let sourceIdentifier: String
+    let hasReminderCalendars: Bool
+}
+
 /// Extension to EventKitService for reminder operations.
 extension EventKitService {
 
@@ -349,15 +357,30 @@ extension EventKitService {
         let calendar = EKCalendar(for: .reminder, eventStore: store)
         calendar.title = name
 
-        // Find the local source (or iCloud, or first available)
-        let sources = store.sources
-        let localSource = sources.first { $0.sourceType == .local }
-            ?? sources.first { $0.sourceType == .calDAV }
-            ?? sources.first { $0.sourceType == .mobileMe }
-        guard let source = localSource else {
+        // Build candidates from real sources, checking which ones have reminder calendars
+        let reminderCalendars = store.calendars(for: .reminder)
+        let candidates = store.sources.map { src in
+            let hasReminders = reminderCalendars.contains { $0.source.sourceIdentifier == src.sourceIdentifier }
+            return SourceCandidate(
+                title: src.title,
+                sourceType: src.sourceType,
+                sourceIdentifier: src.sourceIdentifier,
+                hasReminderCalendars: hasReminders
+            )
+        }
+
+        guard let best = EventKitService.findBestReminderSource(from: candidates) else {
             throw ReminderListError.noSourceAvailable
         }
-        calendar.source = source
+
+        // Match back to real EKSource by identifier
+        guard let realSource = store.sources.first(where: {
+            $0.sourceIdentifier == best.sourceIdentifier
+        }) else {
+            throw ReminderListError.noSourceAvailable
+        }
+
+        calendar.source = realSource
 
         try store.saveCalendar(calendar, commit: true)
 
@@ -366,5 +389,22 @@ extension EventKitService {
             id: calendar.calendarIdentifier,
             created: true
         )
+    }
+
+    /// Pure function: select the best source for creating a reminder list.
+    /// Priority: iCloud with reminders > any source with reminders > nil.
+    static func findBestReminderSource(from candidates: [SourceCandidate]) -> SourceCandidate? {
+        let withReminders = candidates.filter { $0.hasReminderCalendars }
+        if withReminders.isEmpty { return nil }
+
+        // Prefer iCloud (CalDAV source with "iCloud" in title)
+        if let icloud = withReminders.first(where: {
+            $0.sourceType == .calDAV && $0.title.contains("iCloud")
+        }) {
+            return icloud
+        }
+
+        // Fallback: any source that already has reminder calendars
+        return withReminders.first
     }
 }
