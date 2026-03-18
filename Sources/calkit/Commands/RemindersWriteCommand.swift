@@ -73,6 +73,11 @@ enum RemindersWriteCommand {
                 url: parsed.url
             )
 
+            // If URL provided, also set via Shortcuts (new Reminders URL field, CloudKit)
+            if let url = parsed.url {
+                ShortcutsService.setReminderURL(title: reminder.title, url: url)
+            }
+
             if parsed.useJSON {
                 print(JSONFormatter.format(reminder))
             } else {
@@ -320,5 +325,54 @@ enum RemindersWriteCommand {
             printError("echec de la suppression : \(error.localizedDescription)")
             exit(4)
         }
+    }
+
+    // MARK: - Set URL (via Shortcuts)
+
+    /// Handle `calkit reminders set-url <titre> <url>`
+    static func runSetURL(args: [String]) {
+        // Help flag
+        if args.isEmpty || args.contains("--help") || args.contains("-h") {
+            print("""
+                calkit reminders set-url — Définir l'URL CloudKit d'un rappel via Shortcuts
+
+                Usage: calkit reminders set-url <titre> <url>
+
+                Arguments:
+                  <titre>       Titre exact du rappel (obligatoire)
+                  <url>         URL à associer (obligatoire, format https://example.com)
+
+                Options:
+                  --help, -h    Afficher cette aide
+
+                Note:
+                  Utilise le raccourci Shortcuts "calkit-set-url" pour écrire le champ URL
+                  CloudKit (iOS 16+) inaccessible via EventKit.
+
+                Exemples:
+                  calkit reminders set-url "Review PR" https://github.com/org/repo/pull/42
+                  calkit reminders set-url "Lire article" https://blog.example.com/post
+                """)
+            if args.isEmpty {
+                exit(1)
+            }
+            exit(0)
+        }
+
+        // Parse arguments
+        let parseResult = SetURLArgs.parse(args)
+        let parsed: SetURLArgs
+        switch parseResult {
+        case .success(let p):
+            parsed = p
+        case .failure(let err):
+            printError(err.message)
+            exit(1)
+        }
+
+        // Call Shortcuts
+        ShortcutsService.setReminderURL(title: parsed.title, url: parsed.url)
+        print("URL mise à jour pour '\(parsed.title)'")
+        exit(0)
     }
 }

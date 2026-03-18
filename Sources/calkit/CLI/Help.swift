@@ -63,6 +63,7 @@ enum Help {
           create       Créer un rappel
           complete     Marquer un rappel comme complété
           delete       Supprimer un rappel
+          set-url      Définir l'URL CloudKit d'un rappel via Shortcuts
 
         Exemple:
           calkit reminders lists

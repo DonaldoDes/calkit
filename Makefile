@@ -18,7 +18,7 @@ build: $(SOURCES)
 		-O
 
 clean:
-	rm -f $(BINARY) calkit-tests calkit-search-tests calkit-create-tests calkit-update-tests calkit-delete-tests calkit-reminder-formatter-tests calkit-create-reminder-tests calkit-reminder-cmd-tests calkit-alarm-recurrence-tests calkit-create-list-tests calkit-source-selection-tests
+	rm -f $(BINARY) calkit-tests calkit-search-tests calkit-create-tests calkit-update-tests calkit-delete-tests calkit-reminder-formatter-tests calkit-create-reminder-tests calkit-reminder-cmd-tests calkit-alarm-recurrence-tests calkit-create-list-tests calkit-source-selection-tests calkit-seturl-tests
 
 install: build
 	cp $(BINARY) $(INSTALL_PATH)
@@ -128,6 +128,15 @@ test-unit:
 		$(TEST_FW) \
 		Tests/unit/ReminderSourceSelectionTests.swift \
 		-o ./calkit-source-selection-tests && ./calkit-source-selection-tests
+	swiftc \
+		-framework EventKit \
+		-framework Foundation \
+		Sources/calkit/Models/*.swift \
+		Sources/calkit/Output/*.swift \
+		Sources/calkit/Services/*.swift \
+		$(TEST_FW) \
+		Tests/unit/SetURLCommandTests.swift \
+		-o ./calkit-seturl-tests && ./calkit-seturl-tests
 
 test-smoke: build
 	bash Tests/smoke.sh

@@ -64,6 +64,8 @@ if Help.validDomains.contains(first) {
         RemindersWriteCommand.runComplete(args: actionArgs)
     case ("reminders", "delete"):
         RemindersWriteCommand.runDelete(args: actionArgs)
+    case ("reminders", "set-url"):
+        RemindersWriteCommand.runSetURL(args: actionArgs)
     default:
         printError("'\(domain) \(action)' n'est pas encore implémenté.")
         exit(1)
