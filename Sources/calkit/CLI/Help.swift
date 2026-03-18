@@ -57,15 +57,17 @@ enum Help {
         calkit reminders — Gestion des rappels
 
         Commandes:
-          lists     Lister toutes les listes de rappels
-          list      Consulter les rappels d'une liste
-          create    Créer un rappel
-          complete  Marquer un rappel comme complété
-          delete    Supprimer un rappel
+          lists        Lister toutes les listes de rappels
+          list         Consulter les rappels d'une liste
+          create-list  Créer une nouvelle liste de rappels
+          create       Créer un rappel
+          complete     Marquer un rappel comme complété
+          delete       Supprimer un rappel
 
         Exemple:
           calkit reminders lists
           calkit reminders list --list "Courses"
+          calkit reminders create-list "Brio"
           calkit reminders create "Appeler le médecin" --due 2026-03-20T10:00:00
         """
 

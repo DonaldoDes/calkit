@@ -97,6 +97,77 @@ enum RemindersWriteCommand {
         }
     }
 
+    // MARK: - Create List
+
+    /// Handle `calkit reminders create-list <nom> [--json]`
+    static func runCreateList(args: [String]) {
+        // Help flag
+        if args.isEmpty || args.contains("--help") || args.contains("-h") {
+            print("""
+                calkit reminders create-list — Creer une nouvelle liste de rappels
+
+                Usage: calkit reminders create-list <nom> [--json]
+
+                Arguments:
+                  <nom>         Nom de la liste a creer (obligatoire)
+
+                Options:
+                  --json        Sortie au format JSON
+                  --help, -h    Afficher cette aide
+
+                Exit codes:
+                  0   Liste creee ou deja existante
+                  2   Acces aux rappels refuse
+                  4   Erreur EventKit lors de la creation
+
+                Exemples:
+                  calkit reminders create-list "Brio"
+                  calkit reminders create-list "Courses" --json
+                """)
+            if args.isEmpty {
+                exit(1)
+            }
+            exit(0)
+        }
+
+        // Parse arguments
+        let parseResult = CreateReminderListArgs.parse(args)
+        let parsed: CreateReminderListArgs
+        switch parseResult {
+        case .success(let p):
+            parsed = p
+        case .failure(let err):
+            printError(err.message)
+            exit(1)
+        }
+
+        // Request reminder access
+        let granted = EventKitService.shared.requestReminderAccessSync()
+        guard granted else {
+            printError("acces aux rappels refuse. Autorisez calkit dans Reglages Systeme > Confidentialite > Rappels.")
+            exit(2)
+        }
+
+        // Create list
+        do {
+            let result = try EventKitService.shared.createReminderList(name: parsed.name)
+
+            if parsed.useJSON {
+                print(JSONFormatter.format(result))
+            } else {
+                if result.created {
+                    print("Liste '\(result.name)' creee (id: \(result.id))")
+                } else {
+                    print("Liste '\(result.name)' existe deja (id: \(result.id))")
+                }
+            }
+            exit(0)
+        } catch {
+            printError("echec de la creation de la liste : \(error.localizedDescription)")
+            exit(4)
+        }
+    }
+
     // MARK: - US-011: Complete
 
     /// Handle `calkit reminders complete <id> [--json]`

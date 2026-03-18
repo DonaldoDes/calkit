@@ -56,6 +56,8 @@ if Help.validDomains.contains(first) {
         RemindersReadCommand.runLists(args: actionArgs)
     case ("reminders", "list"):
         RemindersReadCommand.runList(args: actionArgs)
+    case ("reminders", "create-list"):
+        RemindersWriteCommand.runCreateList(args: actionArgs)
     case ("reminders", "create"):
         RemindersWriteCommand.runCreate(args: actionArgs)
     case ("reminders", "complete"):

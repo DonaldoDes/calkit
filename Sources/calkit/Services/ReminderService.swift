@@ -8,6 +8,11 @@ enum ReminderError: Error {
     case listAmbiguous(String)
 }
 
+/// Errors specific to reminder list operations.
+enum ReminderListError: Error {
+    case noSourceAvailable
+}
+
 /// Extension to EventKitService for reminder operations.
 extension EventKitService {
 
@@ -323,5 +328,43 @@ extension EventKitService {
         let title = item.title ?? ""
         try store.remove(item, commit: true)
         return title
+    }
+
+    // MARK: - Create Reminder List
+
+    /// Create a new reminder list. Returns (CKCreateReminderListResult).
+    /// If a list with the same name already exists, returns it with created=false (idempotent).
+    func createReminderList(name: String) throws -> CKCreateReminderListResult {
+        // Check if list already exists
+        let existing = store.calendars(for: .reminder).first { $0.title == name }
+        if let existing = existing {
+            return CKCreateReminderListResult(
+                name: existing.title,
+                id: existing.calendarIdentifier,
+                created: false
+            )
+        }
+
+        // Create new EKCalendar for reminders
+        let calendar = EKCalendar(for: .reminder, eventStore: store)
+        calendar.title = name
+
+        // Find the local source (or iCloud, or first available)
+        let sources = store.sources
+        let localSource = sources.first { $0.sourceType == .local }
+            ?? sources.first { $0.sourceType == .calDAV }
+            ?? sources.first { $0.sourceType == .mobileMe }
+        guard let source = localSource else {
+            throw ReminderListError.noSourceAvailable
+        }
+        calendar.source = source
+
+        try store.saveCalendar(calendar, commit: true)
+
+        return CKCreateReminderListResult(
+            name: calendar.title,
+            id: calendar.calendarIdentifier,
+            created: true
+        )
     }
 }
