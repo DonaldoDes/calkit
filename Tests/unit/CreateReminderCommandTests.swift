@@ -192,6 +192,61 @@ struct CreateReminderTestRunner {
             }
         }
 
+        // --- --url option parsing ---
+
+        runTest("testParseCreateReminderArgs_withUrl") {
+            let args = ["Buy milk", "--url", "https://example.com/task"]
+            let result = CreateReminderArgs.parse(args)
+            switch result {
+            case .success(let parsed):
+                assertEqual(parsed.title, "Buy milk")
+                assertEqual(parsed.url ?? "", "https://example.com/task")
+            case .failure(let err):
+                failCount += 1
+                FileHandle.standardError.write(Data("FAIL [\(currentTest)] unexpected error: \(err.message)\n".utf8))
+            }
+        }
+
+        runTest("testParseCreateReminderArgs_urlDefault_nil") {
+            let args = ["Simple task"]
+            let result = CreateReminderArgs.parse(args)
+            switch result {
+            case .success(let parsed):
+                assertTrue(parsed.url == nil, "URL should be nil when not specified")
+            case .failure(let err):
+                failCount += 1
+                FileHandle.standardError.write(Data("FAIL [\(currentTest)] unexpected error: \(err.message)\n".utf8))
+            }
+        }
+
+        runTest("testParseCreateReminderArgs_invalidUrl") {
+            let args = ["Test", "--url", "not a valid url"]
+            let result = CreateReminderArgs.parse(args)
+            switch result {
+            case .success:
+                failCount += 1
+                FileHandle.standardError.write(Data("FAIL [\(currentTest)] should have failed for invalid URL\n".utf8))
+            case .failure(let err):
+                assertTrue(err.message.contains("URL"), "Error should mention URL: \(err.message)")
+            }
+        }
+
+        runTest("testParseCreateReminderArgs_urlWithAllOptions") {
+            let args = ["Full task", "--list", "Work", "--due", "2026-04-01T10:00:00",
+                        "--priority", "1", "--notes", "Details", "--url", "https://jira.example.com/TASK-42"]
+            let result = CreateReminderArgs.parse(args)
+            switch result {
+            case .success(let parsed):
+                assertEqual(parsed.title, "Full task")
+                assertEqual(parsed.url ?? "", "https://jira.example.com/TASK-42")
+                assertEqual(parsed.listName ?? "", "Work")
+                assertEqual(parsed.priority, 1)
+            case .failure(let err):
+                failCount += 1
+                FileHandle.standardError.write(Data("FAIL [\(currentTest)] unexpected error: \(err.message)\n".utf8))
+            }
+        }
+
         reportResults()
     }
 }

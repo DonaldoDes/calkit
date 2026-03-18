@@ -39,7 +39,7 @@ struct ReminderFormatterTestRunner {
         runTest("formatReminders_single_noDueDate") {
             let reminders = [
                 CKReminder(id: "r-001", title: "Acheter du pain", list: "Courses", listId: "l1",
-                           isCompleted: false, priority: 0, dueDate: nil, notes: nil, creationDate: "2026-03-10T08:00:00+01:00", completionDate: nil, alarms: nil, recurrenceRules: nil)
+                           isCompleted: false, priority: 0, dueDate: nil, notes: nil, creationDate: "2026-03-10T08:00:00+01:00", completionDate: nil, alarms: nil, recurrenceRules: nil, url: nil, lastModifiedDate: nil)
             ]
             let output = TextFormatter.formatReminders(reminders)
             assertTrue(output.contains("Acheter du pain"), "Should contain reminder title")
@@ -50,7 +50,7 @@ struct ReminderFormatterTestRunner {
         runTest("formatReminders_single_withDueDate") {
             let reminders = [
                 CKReminder(id: "r-002", title: "Appeler le médecin", list: "Perso", listId: "l2",
-                           isCompleted: false, priority: 1, dueDate: "2026-04-01T10:00:00+02:00", notes: "RDV annuel", creationDate: "2026-03-10T08:00:00+01:00", completionDate: nil, alarms: nil, recurrenceRules: nil)
+                           isCompleted: false, priority: 1, dueDate: "2026-04-01T10:00:00+02:00", notes: "RDV annuel", creationDate: "2026-03-10T08:00:00+01:00", completionDate: nil, alarms: nil, recurrenceRules: nil, url: nil, lastModifiedDate: nil)
             ]
             let output = TextFormatter.formatReminders(reminders)
             assertTrue(output.contains("Appeler le médecin"), "Should contain reminder title")
@@ -61,7 +61,7 @@ struct ReminderFormatterTestRunner {
         runTest("formatReminders_completed") {
             let reminders = [
                 CKReminder(id: "r-003", title: "Tâche finie", list: "Travail", listId: "l3",
-                           isCompleted: true, priority: 0, dueDate: nil, notes: nil, creationDate: "2026-03-01T12:00:00+01:00", completionDate: nil, alarms: nil, recurrenceRules: nil)
+                           isCompleted: true, priority: 0, dueDate: nil, notes: nil, creationDate: "2026-03-01T12:00:00+01:00", completionDate: nil, alarms: nil, recurrenceRules: nil, url: nil, lastModifiedDate: nil)
             ]
             let output = TextFormatter.formatReminders(reminders)
             assertTrue(output.contains("✓"), "Completed reminders should show checkmark")
@@ -70,7 +70,7 @@ struct ReminderFormatterTestRunner {
         runTest("formatReminders_notCompleted") {
             let reminders = [
                 CKReminder(id: "r-004", title: "Tâche en cours", list: "Travail", listId: "l3",
-                           isCompleted: false, priority: 0, dueDate: nil, notes: nil, creationDate: "2026-03-01T12:00:00+01:00", completionDate: nil, alarms: nil, recurrenceRules: nil)
+                           isCompleted: false, priority: 0, dueDate: nil, notes: nil, creationDate: "2026-03-01T12:00:00+01:00", completionDate: nil, alarms: nil, recurrenceRules: nil, url: nil, lastModifiedDate: nil)
             ]
             let output = TextFormatter.formatReminders(reminders)
             assertTrue(output.contains("○"), "Incomplete reminders should show open circle")
@@ -85,7 +85,7 @@ struct ReminderFormatterTestRunner {
         runTest("formatReminders_withPriority") {
             let reminders = [
                 CKReminder(id: "r-005", title: "Urgent", list: "Travail", listId: "l3",
-                           isCompleted: false, priority: 1, dueDate: nil, notes: nil, creationDate: "2026-03-01T12:00:00+01:00", completionDate: nil, alarms: nil, recurrenceRules: nil)
+                           isCompleted: false, priority: 1, dueDate: nil, notes: nil, creationDate: "2026-03-01T12:00:00+01:00", completionDate: nil, alarms: nil, recurrenceRules: nil, url: nil, lastModifiedDate: nil)
             ]
             let output = TextFormatter.formatReminders(reminders)
             assertTrue(output.contains("!1"), "High priority should show !1 indicator")
@@ -115,7 +115,7 @@ struct ReminderFormatterTestRunner {
         runTest("formatRemindersJSON") {
             let reminders = [
                 CKReminder(id: "r-001", title: "Acheter du pain", list: "Courses", listId: "l1",
-                           isCompleted: false, priority: 0, dueDate: nil, notes: nil, creationDate: "2026-03-10T08:00:00+01:00", completionDate: nil, alarms: nil, recurrenceRules: nil)
+                           isCompleted: false, priority: 0, dueDate: nil, notes: nil, creationDate: "2026-03-10T08:00:00+01:00", completionDate: nil, alarms: nil, recurrenceRules: nil, url: nil, lastModifiedDate: nil)
             ]
             let json = JSONFormatter.format(reminders)
             guard let data = json.data(using: .utf8),
@@ -133,11 +133,69 @@ struct ReminderFormatterTestRunner {
             assertEqual(parsed[0]["priority"] as? Int ?? -1, 0)
         }
 
+        // --- url and lastModifiedDate fields in JSON ---
+
+        runTest("formatRemindersJSON_includesUrlField") {
+            let reminders = [
+                CKReminder(id: "r-url", title: "With URL", list: "Courses", listId: "l1",
+                           isCompleted: false, priority: 0, dueDate: nil, notes: nil,
+                           creationDate: "2026-03-10T08:00:00+01:00", completionDate: nil,
+                           alarms: nil, recurrenceRules: nil,
+                           url: "https://example.com", lastModifiedDate: nil)
+            ]
+            let json = JSONFormatter.format(reminders)
+            guard let data = json.data(using: .utf8),
+                  let parsed = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
+                failCount += 1
+                FileHandle.standardError.write(Data("FAIL [\(currentTest)] Output should be valid JSON array\n".utf8))
+                return
+            }
+            assertEqual(parsed[0]["url"] as? String ?? "", "https://example.com")
+        }
+
+        runTest("formatRemindersJSON_includesLastModifiedDateField") {
+            let reminders = [
+                CKReminder(id: "r-lmd", title: "With LMD", list: "Courses", listId: "l1",
+                           isCompleted: false, priority: 0, dueDate: nil, notes: nil,
+                           creationDate: "2026-03-10T08:00:00+01:00", completionDate: nil,
+                           alarms: nil, recurrenceRules: nil,
+                           url: nil, lastModifiedDate: "2026-03-15T14:30:00+01:00")
+            ]
+            let json = JSONFormatter.format(reminders)
+            guard let data = json.data(using: .utf8),
+                  let parsed = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
+                failCount += 1
+                FileHandle.standardError.write(Data("FAIL [\(currentTest)] Output should be valid JSON array\n".utf8))
+                return
+            }
+            assertEqual(parsed[0]["lastModifiedDate"] as? String ?? "", "2026-03-15T14:30:00+01:00")
+        }
+
+        runTest("formatRemindersJSON_urlAndLastModifiedDateNilOmitted") {
+            let reminders = [
+                CKReminder(id: "r-nil", title: "No extras", list: "Courses", listId: "l1",
+                           isCompleted: false, priority: 0, dueDate: nil, notes: nil,
+                           creationDate: "2026-03-10T08:00:00+01:00", completionDate: nil,
+                           alarms: nil, recurrenceRules: nil,
+                           url: nil, lastModifiedDate: nil)
+            ]
+            let json = JSONFormatter.format(reminders)
+            guard let data = json.data(using: .utf8),
+                  let parsed = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
+                failCount += 1
+                FileHandle.standardError.write(Data("FAIL [\(currentTest)] Output should be valid JSON array\n".utf8))
+                return
+            }
+            // nil optionals should not appear in JSON output
+            assertTrue(parsed[0]["url"] == nil || parsed[0]["url"] is NSNull, "url should be nil/absent when not set")
+            assertTrue(parsed[0]["lastModifiedDate"] == nil || parsed[0]["lastModifiedDate"] is NSNull, "lastModifiedDate should be nil/absent when not set")
+        }
+
         // --- Confirmation Text Formatting Tests ---
 
         runTest("formatCreatedReminder") {
             let reminder = CKReminder(id: "r-new", title: "Nouvelle tâche", list: "Courses", listId: "l1",
-                                      isCompleted: false, priority: 0, dueDate: nil, notes: nil, creationDate: "2026-03-17T10:00:00+01:00", completionDate: nil, alarms: nil, recurrenceRules: nil)
+                                      isCompleted: false, priority: 0, dueDate: nil, notes: nil, creationDate: "2026-03-17T10:00:00+01:00", completionDate: nil, alarms: nil, recurrenceRules: nil, url: nil, lastModifiedDate: nil)
             let output = TextFormatter.formatCreatedReminder(reminder)
             assertTrue(output.hasPrefix("Rappel créé."), "Should start with confirmation")
             assertTrue(output.contains("r-new"), "Should contain ID")

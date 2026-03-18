@@ -212,6 +212,16 @@ extension EventKitService {
             rulesArr = ekRules.map { RecurrenceParser.format($0) }
         }
 
+        var urlStr: String? = nil
+        if let url = ekReminder.url {
+            urlStr = url.absoluteString
+        }
+
+        var lastModifiedDateStr: String? = nil
+        if let lastModifiedDate = ekReminder.lastModifiedDate {
+            lastModifiedDateStr = EventDateParser.formatISO8601(lastModifiedDate)
+        }
+
         return CKReminder(
             id: ekReminder.calendarItemIdentifier,
             title: ekReminder.title ?? "",
@@ -224,7 +234,9 @@ extension EventKitService {
             creationDate: creationDateStr,
             completionDate: completionDateStr,
             alarms: alarmsArr,
-            recurrenceRules: rulesArr
+            recurrenceRules: rulesArr,
+            url: urlStr,
+            lastModifiedDate: lastModifiedDateStr
         )
     }
 
@@ -233,7 +245,8 @@ extension EventKitService {
     /// Create a new reminder in EventKit. Returns the created CKReminder.
     func createReminder(title: String, listName: String?, dueDate: String?,
                         priority: Int, notes: String?,
-                        alarm: String?, recurrence: String?) throws -> CKReminder {
+                        alarm: String?, recurrence: String?,
+                        url: String? = nil) throws -> CKReminder {
         let reminder = EKReminder(eventStore: store)
         reminder.title = title
 
@@ -267,6 +280,11 @@ extension EventKitService {
         // Recurrence rule
         if let rruleStr = recurrence, let rule = RecurrenceParser.parse(rruleStr) {
             reminder.addRecurrenceRule(rule)
+        }
+
+        // URL
+        if let urlStr = url, let parsedURL = URL(string: urlStr) {
+            reminder.url = parsedURL
         }
 
         try store.save(reminder, commit: true)

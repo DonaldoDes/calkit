@@ -21,6 +21,8 @@ struct CKReminder: Encodable {
     let completionDate: String? // ISO 8601 or nil
     let alarms: [String]?   // ISO 8601 absolute dates of alarm triggers
     let recurrenceRules: [String]? // RRULE strings (e.g. FREQ=DAILY, FREQ=WEEKLY;BYDAY=MO,WE)
+    let url: String?        // associated URL
+    let lastModifiedDate: String? // ISO 8601
 }
 
 /// Result of a reminder action (complete, delete) for JSON output.

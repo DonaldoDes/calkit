@@ -12,7 +12,7 @@ enum RemindersWriteCommand {
             print("""
                 calkit reminders create — Creer un nouveau rappel
 
-                Usage: calkit reminders create <titre> [--list <nom>] [--due <datetime>] [--priority <1-9>] [--notes <texte>] [--alarm <datetime>] [--recurrence <rule>] [--json]
+                Usage: calkit reminders create <titre> [--list <nom>] [--due <datetime>] [--priority <1-9>] [--notes <texte>] [--alarm <datetime>] [--recurrence <rule>] [--url <url>] [--json]
 
                 Arguments:
                   <titre>       Titre du rappel (obligatoire)
@@ -24,6 +24,7 @@ enum RemindersWriteCommand {
                   --notes       Notes associees
                   --alarm       Date/heure de declenchement de l'alerte (format YYYY-MM-DDTHH:MM:SS)
                   --recurrence  Regle de recurrence (FREQ=DAILY, FREQ=WEEKLY;BYDAY=MO,WE,FR, FREQ=MONTHLY, FREQ=YEARLY)
+                  --url         URL associee au rappel (format https://example.com)
                   --json        Sortie au format JSON
                   --help, -h    Afficher cette aide
 
@@ -33,6 +34,7 @@ enum RemindersWriteCommand {
                   calkit reminders create "Preparer la demo" --list "Travail" --due 2026-03-25T09:00:00 --priority 1 --notes "Inclure les slides"
                   calkit reminders create "Reunion hebdo" --due 2026-03-25T09:00:00 --alarm 2026-03-25T08:30:00 --recurrence FREQ=WEEKLY
                   calkit reminders create "Standup" --due 2026-03-20T09:00:00 --recurrence FREQ=DAILY --alarm 2026-03-20T08:55:00
+                  calkit reminders create "Review PR" --url https://github.com/org/repo/pull/42
                 """)
             if args.isEmpty {
                 exit(1)
@@ -67,7 +69,8 @@ enum RemindersWriteCommand {
                 priority: parsed.priority,
                 notes: parsed.notes,
                 alarm: parsed.alarm,
-                recurrence: parsed.recurrence
+                recurrence: parsed.recurrence,
+                url: parsed.url
             )
 
             if parsed.useJSON {

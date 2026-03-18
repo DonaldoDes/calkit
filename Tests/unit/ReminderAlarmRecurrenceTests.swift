@@ -15,7 +15,8 @@ struct ReminderAlarmRecurrenceTestRunner {
                 isCompleted: false, priority: 0, dueDate: nil, notes: nil,
                 creationDate: "2026-03-10T08:00:00+01:00", completionDate: nil,
                 alarms: ["2026-03-25T09:00:00+01:00", "2026-03-25T08:30:00+01:00"],
-                recurrenceRules: nil
+                recurrenceRules: nil,
+                url: nil, lastModifiedDate: nil
             )
             let json = JSONFormatter.format(reminder)
             guard let data = json.data(using: .utf8),
@@ -40,7 +41,8 @@ struct ReminderAlarmRecurrenceTestRunner {
                 isCompleted: false, priority: 0, dueDate: nil, notes: nil,
                 creationDate: "2026-03-10T08:00:00+01:00", completionDate: nil,
                 alarms: nil,
-                recurrenceRules: nil
+                recurrenceRules: nil,
+                url: nil, lastModifiedDate: nil
             )
             let json = JSONFormatter.format(reminder)
             guard let data = json.data(using: .utf8),
@@ -63,7 +65,8 @@ struct ReminderAlarmRecurrenceTestRunner {
                 isCompleted: false, priority: 1, dueDate: "2026-03-25T10:00:00+01:00", notes: nil,
                 creationDate: "2026-03-10T08:00:00+01:00", completionDate: nil,
                 alarms: nil,
-                recurrenceRules: ["FREQ=DAILY", "FREQ=WEEKLY;BYDAY=MO,WE,FR"]
+                recurrenceRules: ["FREQ=DAILY", "FREQ=WEEKLY;BYDAY=MO,WE,FR"],
+                url: nil, lastModifiedDate: nil
             )
             let json = JSONFormatter.format(reminder)
             guard let data = json.data(using: .utf8),
@@ -88,7 +91,8 @@ struct ReminderAlarmRecurrenceTestRunner {
                 isCompleted: false, priority: 0, dueDate: "2026-03-25T10:00:00+01:00", notes: nil,
                 creationDate: "2026-03-10T08:00:00+01:00", completionDate: nil,
                 alarms: ["2026-03-25T09:30:00+01:00"],
-                recurrenceRules: ["FREQ=WEEKLY"]
+                recurrenceRules: ["FREQ=WEEKLY"],
+                url: nil, lastModifiedDate: nil
             )
             let json = JSONFormatter.format(reminder)
             guard let data = json.data(using: .utf8),
@@ -279,7 +283,8 @@ struct ReminderAlarmRecurrenceTestRunner {
                            isCompleted: false, priority: 1, dueDate: "2026-04-01T10:00:00+01:00", notes: nil,
                            creationDate: "2026-03-10T08:00:00+01:00", completionDate: nil,
                            alarms: ["2026-04-01T09:30:00+01:00"],
-                           recurrenceRules: ["FREQ=DAILY"])
+                           recurrenceRules: ["FREQ=DAILY"],
+                           url: nil, lastModifiedDate: nil)
             ]
             let output = TextFormatter.formatReminders(reminders)
             assertTrue(output.contains("With extras"), "Should contain title")

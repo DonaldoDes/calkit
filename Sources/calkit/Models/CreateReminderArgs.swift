@@ -9,6 +9,7 @@ struct CreateReminderArgs {
     let notes: String?
     let alarm: String?      // ISO 8601 datetime for alarm trigger
     let recurrence: String? // RRULE string (e.g. FREQ=DAILY, FREQ=WEEKLY;BYDAY=MO,WE)
+    let url: String?        // associated URL
     let useJSON: Bool
 
     /// Parse raw CLI arguments into CreateReminderArgs.
@@ -17,7 +18,7 @@ struct CreateReminderArgs {
         var positional: [String] = []
         var options: [String: String] = [:]
         var flags: Set<String> = []
-        let valuedOptions: Set<String> = ["--list", "--due", "--priority", "--notes", "--alarm", "--recurrence"]
+        let valuedOptions: Set<String> = ["--list", "--due", "--priority", "--notes", "--alarm", "--recurrence", "--url"]
 
         var i = 0
         while i < args.count {
@@ -75,6 +76,13 @@ struct CreateReminderArgs {
             }
         }
 
+        // URL validation (if provided)
+        if let urlStr = options["--url"] {
+            guard URL(string: urlStr) != nil, urlStr.contains(":") else {
+                return .failure(ParseError(message: "URL invalide : '\(urlStr)'. Format attendu : https://example.com"))
+            }
+        }
+
         return .success(CreateReminderArgs(
             title: title,
             listName: options["--list"],
@@ -83,6 +91,7 @@ struct CreateReminderArgs {
             notes: options["--notes"],
             alarm: options["--alarm"],
             recurrence: options["--recurrence"],
+            url: options["--url"],
             useJSON: flags.contains("--json")
         ))
     }
